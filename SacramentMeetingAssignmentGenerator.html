@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <title>임무지명카드 발생기</title>
+    <style>
+        .postcard {
+            background-image: url('https://img.freepik.com/free-photo/crumpled-paper-background_1373-431.jpg');
+            background-size: cover;
+            background-blend-mode: multiply;
+            backdrop-filter: brightness(0.95);
+            border-radius: 1rem;
+            box-shadow: 0 15px 20px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+            color: #374151;
+            font-family: 'Noto Sans', sans-serif;
+        }
+        .postcard:hover {
+            transform: translateY(-10px);
+        }
+        .badge {
+            background: linear-gradient(45deg, #6b7280, #9ca3af);
+        }
+        .bg-gradient-custom {
+            background: linear-gradient(to right, #e0e7ff, #f3f4f6);
+        }
+    </style>
+</head>
+<body class="bg-gradient-custom min-h-screen flex items-center justify-center">
+    <div class="container mx-auto mt-10 p-6 rounded-lg shadow-xl bg-white w-1/2">
+        <h1 class="text-4xl font-extrabold text-center text-gray-800 mb-6">임무지명카드 발생기</h1>
+        <div class="mb-4">
+            <input type="text" class="border border-gray-300 rounded p-2 w-full" id="missionName" placeholder="이름 (예: 김장환)" />
+        </div>
+        <div class="mb-4">
+            <select class="border border-gray-300 rounded p-2 w-full" id="missionDescription">
+                <option value="">임무 선택</option>
+                <option value="개회기도">개회기도</option>
+                <option value="폐회기도">폐회기도</option>
+                <option value="5분 말씀">5분 말씀</option>
+                <option value="7분 말씀">7분 말씀</option>
+                <option value="주연사">주연사</option>
+            </select>
+        </div>
+        <div class="mb-4">
+            <input type="date" class="border border-gray-300 rounded p-2 w-full" id="missionDate" />
+        </div>
+        <div class="mb-4">
+            <input type="text" class="border border-gray-300 rounded p-2 w-full" id="missionTopic" placeholder="주제 (예: 겸손)" />
+        </div>
+        <button class="bg-gradient-to-r from-gray-500 to-gray-700 hover:from-gray-700 hover:to-gray-500 text-white font-bold py-3 px-4 rounded-lg w-full transition duration-300" id="generateCard">임무 카드 생성</button>
+        <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg w-full mt-4 transition duration-300" id="saveCard">카드 저장하기</button>
+        <div id="cardContainer" class="mt-10 flex justify-center"></div>
+    </div>
+
+    <script>
+        document.getElementById("generateCard").addEventListener("click", generateCard);
+        document.getElementById("saveCard").addEventListener("click", saveCardAsImage);
+
+        function generateCard() {
+            const name = document.getElementById("missionName").value;
+            const description = document.getElementById("missionDescription").value;
+            const date = document.getElementById("missionDate").value;
+            const topic = document.getElementById("missionTopic").value;
+
+            const cardHTML = `
+                <div id="generatedCard" class="postcard bg-opacity-90 backdrop-blur-lg shadow-lg rounded-lg p-6 mb-4 w-96 border-4 border-gray-300 relative overflow-hidden text-center">
+                    <div class="absolute top-0 right-0 badge text-white px-4 py-2 rounded-bl-lg shadow-md">
+                        <i class="fas fa-envelope"></i> 성찬식 임무지명 카드
+                    </div>
+                    <div class="mt-12">
+                        <h5 class="text-3xl font-bold text-gray-800">이름: ${name}</h5>
+                        <p class="text-gray-700 mt-4 italic">임무: "${description}"</p>
+                        <div class="flex items-center justify-center mt-4">
+                            <i class="far fa-calendar-alt text-gray-600 mr-2"></i>
+                            <small class="text-gray-600 font-semibold">날짜: ${date}</small>
+                        </div>
+                        <div class="flex items-center justify-center mt-2">
+                            <i class="fas fa-tag text-gray-600 mr-2"></i>
+                            <p class="text-gray-600">주제: ${topic}</p>
+                        </div>
+                    </div>
+                    <div class="mt-6 border-t border-gray-300 pt-4">
+                        <p class="text-center text-gray-800 font-semibold">흥덕와드 감독단</p>
+                    </div>
+                    <div class="absolute bottom-2 left-2">
+                        <i class="fas fa-stamp text-gray-500 text-3xl transform rotate-12"></i>
+                    </div>
+                </div>
+            `;
+            document.getElementById("cardContainer").innerHTML = cardHTML;
+        }
+
+        function saveCardAsImage() {
+            const cardElement = document.getElementById("generatedCard");
+            if (cardElement) {
+                html2canvas(cardElement, {
+                    backgroundColor: null,
+                    scale: 2
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.href = canvas.toDataURL('image/png');
+                    link.download = 'mission_card.png';
+                    link.click();
+                });
+            } else {
+                alert("먼저 임무 카드를 생성해주세요.");
+            }
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</body>
+</html>
