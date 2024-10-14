@@ -40,6 +40,8 @@
                 <option value="">임무 선택</option>
                 <option value="개회기도">개회기도</option>
                 <option value="폐회기도">폐회기도</option>
+                <option value="성찬전달">성찬전달</option>
+                <option value="성찬축복">성찬축복</option>
                 <option value="5분 말씀">5분 말씀</option>
                 <option value="7분 말씀">7분 말씀</option>
                 <option value="주연사">주연사</option>
@@ -52,7 +54,7 @@
             <input type="text" class="border border-gray-300 rounded p-2 w-full" id="missionTopic" placeholder="주제 (예: 겸손)" />
         </div>
         <button class="bg-gradient-to-r from-gray-500 to-gray-700 hover:from-gray-700 hover:to-gray-500 text-white font-bold py-3 px-4 rounded-lg w-full transition duration-300" id="generateCard">임무 카드 생성</button>
-        <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg w-full mt-4 transition duration-300" id="saveCard">카드 저장하기</button>
+        
         <div id="cardContainer" class="mt-10 flex justify-center"></div>
     </div>
 
@@ -94,22 +96,6 @@
             document.getElementById("cardContainer").innerHTML = cardHTML;
         }
 
-        function saveCardAsImage() {
-            const cardElement = document.getElementById("generatedCard");
-            if (cardElement) {
-                html2canvas(cardElement, {
-                    backgroundColor: null,
-                    scale: 2
-                }).then(canvas => {
-                    const link = document.createElement('a');
-                    link.href = canvas.toDataURL('image/png');
-                    link.download = 'mission_card.png';
-                    link.click();
-                });
-            } else {
-                alert("먼저 임무 카드를 생성해주세요.");
-            }
-        }
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </body>
