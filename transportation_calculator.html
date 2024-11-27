@@ -47,6 +47,10 @@
                         <label for="hipassFee" class="form-label">하이패스 요금 (₩):</label>
                         <input type="number" id="hipassFee" class="form-control" placeholder="하이패스 요금을 입력하세요">
                     </div>
+                    <div class="mb-3">
+                        <label for="parkingFee" class="form-label">주차비 (₩):</label>
+                        <input type="number" id="parkingFee" class="form-control" placeholder="주차비를 입력하세요">
+                    </div>
                     <div class="d-grid">
                         <button onclick="calculateFee()" class="btn btn-primary">계산하기</button>
                     </div>
@@ -61,21 +65,22 @@
             let distance = parseFloat(document.getElementById('distance').value);
             let fuelPrice = parseFloat(document.getElementById('fuelPrice').value);
             let hipassFee = parseFloat(document.getElementById('hipassFee').value);
+            let parkingFee = parseFloat(document.getElementById('parkingFee').value);
 
-            if (isNaN(distance) || isNaN(fuelPrice) || isNaN(hipassFee)) {
+            if (isNaN(distance) || isNaN(fuelPrice) || isNaN(hipassFee) || isNaN(parkingFee)) {
                 document.getElementById('result').innerHTML = "<div class='alert alert-warning'>유효한 숫자를 입력해주세요.</div>";
                 return;
             }
 
             let singleRouteFee = distance * fuelPrice / 11 + hipassFee;
-            let doubleRouteFee = Math.round(singleRouteFee * 2 / 10) * 10;
+            let doubleRouteFee = Math.round((singleRouteFee * 2 + parkingFee) / 10) * 10;
 
             document.getElementById('result').innerHTML = `
                 <div class="alert alert-info">
                     <p>편도 교통비: \ ${Math.round(singleRouteFee)} 원</p>
-                    <p>왕복 교통비: \ ${doubleRouteFee} 원</p>
+                    <p>왕복 교통비 (주차비 포함): \ ${doubleRouteFee} 원</p>
                     <p>편도교통비 = 거리(${distance} km) x 당일 주유비(${fuelPrice} 원) + 편도 하이패스 통행료(${hipassFee} 원) = \ ${singleRouteFee.toFixed(2)} 원</p>
-                    <p>왕복교통비 = \ ${doubleRouteFee} 원</p>
+                    <p>왕복교통비 (주차비 포함) = \ ${doubleRouteFee} 원 (주차비: ${parkingFee} 원 포함)</p>
                 </div>
             `;
         }
