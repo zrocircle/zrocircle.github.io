@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>음식 선택 원판 게임</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* .canvas-container는 position relative로 지정 */
+    .canvas-container {
+      position: relative;
+      display: inline-block;
+    }
+    /* 빨간 직사각형 막대 포인터(폭 10px, 높이 40px로 더 얇게) */
+    .pointer {
+      position: absolute;
+      top: calc(50% - 190px - 40px); /* (캔버스 높이의 절반) - outerRadius - 포인터 높이 */
+      left: 50%;
+      transform: translateX(-50%);
+      width: 10px;
+      height: 40px;
+      background-color: #dc3545;
+      border-radius: 2px;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <div class="bg-white rounded-lg shadow-lg p-8 max-w-2xl w-full">
+    <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">
+      음식 선택 원판 게임
+    </h1>
+    <p class="text-gray-600 text-center mb-4">
+      원판에 표시할 음식을 쉼표(,)로 구분하여 입력하세요.
+    </p>
+    <div class="flex flex-col items-center mb-6">
+      <textarea
+        id="foodInput"
+        class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+        placeholder="예: 피자, 햄버거, 치킨, 김치찌개"
+      ></textarea>
+      <button
+        id="updateBtn"
+        class="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200"
+      >
+        목록 업데이트
+      </button>
+    </div>
+    <div class="flex flex-col items-center">
+      <div class="canvas-container mb-6">
+        <!-- 빨간 직사각형 포인터 (더 얇게) -->
+        <div class="pointer"></div>
+        <canvas
+          id="wheelCanvas"
+          width="400"
+          height="400"
+          class="rounded-full border-4 border-gray-300"
+        ></canvas>
+      </div>
+      <button
+        id="spinBtn"
+        class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-200"
+      >
+        Spin!
+      </button>
+    </div>
+    <div
+      id="result"
+      class="mt-6 text-center text-2xl font-semibold text-gray-800"
+    ></div>
+  </div>
+
+  <script>
+    // 기본 음식 목록 (업데이트 전에도 게임할 수 있도록)
+    let foods = [
+      "피자",
+      "햄버거",
+      "치킨",
+      "김치찌개",
+      "파스타",
+      "초밥",
+      "떡볶이",
+      "라면",
+    ];
+    const canvas = document.getElementById("wheelCanvas");
+    const ctx = canvas.getContext("2d");
+    const spinBtn = document.getElementById("spinBtn");
+    const updateBtn = document.getElementById("updateBtn");
+    const resultDiv = document.getElementById("result");
+    const foodInput = document.getElementById("foodInput");
+
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    let outerRadius = Math.min(centerX, centerY) - 10; // 190 (400/2 - 10)
+    let numSegments = foods.length;
+    let segmentAngle = (2 * Math.PI) / numSegments;
+
+    // 섹터별 색상 (음식 수에 따라 반복 사용)
+    const colors = [
+      "#f94144",
+      "#f3722c",
+      "#f8961e",
+      "#f9844a",
+      "#f9c74f",
+      "#90be6d",
+      "#43aa8b",
+      "#577590",
+      "#6a4c93",
+      "#4d908e",
+    ];
+
+    let currentAngle = 0; // 현재 원판 회전 각도 (라디안)
+    let isSpinning = false;
+
+    // 원판 그리기 함수
+    function drawWheel() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate(currentAngle);
+
+      for (let i = 0; i < numSegments; i++) {
+        const startAngle = i * segmentAngle;
+        const endAngle = startAngle + segmentAngle;
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, outerRadius, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.fill();
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // 섹터 중앙에 텍스트 배치
+        ctx.save();
+        ctx.fillStyle = "#fff";
+        ctx.translate(
+          Math.cos(startAngle + segmentAngle / 2) * (outerRadius * 0.65),
+          Math.sin(startAngle + segmentAngle / 2) * (outerRadius * 0.65)
+        );
+        ctx.rotate(startAngle + segmentAngle / 2);
+        ctx.font = "bold 16px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(foods[i], 0, 0);
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+
+    // 음식 목록 업데이트
+    updateBtn.addEventListener("click", function () {
+      const inputText = foodInput.value.trim();
+      if (inputText !== "") {
+        foods = inputText
+          .split(",")
+          .map((item) => item.trim())
+          .filter((item) => item !== "");
+        numSegments = foods.length;
+        segmentAngle = (2 * Math.PI) / numSegments;
+        currentAngle = 0;
+        drawWheel();
+        resultDiv.textContent = "음식 목록이 업데이트되었습니다.";
+      } else {
+        resultDiv.textContent = "음식 목록을 입력해주세요.";
+      }
+    });
+
+    drawWheel();
+
+    // 스핀 애니메이션 함수
+    function spinWheel() {
+      if (isSpinning || numSegments === 0) return;
+      isSpinning = true;
+      resultDiv.textContent = "";
+
+      const extraSpins = Math.floor(Math.random() * 3) + 3; // 최소 3~5바퀴
+      const randomAngle = Math.random() * 2 * Math.PI;
+      const finalAngle = currentAngle + extraSpins * 2 * Math.PI + randomAngle;
+
+      const duration = 5000; // 5초 애니메이션
+      const startTime = performance.now();
+
+      function animate(currentTime) {
+        const elapsed = currentTime - startTime;
+        if (elapsed < duration) {
+          const t = elapsed / duration;
+          const easedT = 1 - Math.pow(1 - t, 3); // ease-out cubic
+          currentAngle = currentAngle + (finalAngle - currentAngle) * easedT;
+          drawWheel();
+          requestAnimationFrame(animate);
+        } else {
+          currentAngle = finalAngle;
+          drawWheel();
+          isSpinning = false;
+          announceResult();
+        }
+      }
+      requestAnimationFrame(animate);
+    }
+
+    // 결과 계산 및 표시 (빨간 직사각형 포인터는 캔버스 상단 중앙, 즉 12시 방향에 위치)
+    function announceResult() {
+      const normalizedAngle = currentAngle % (2 * Math.PI);
+      let pointerAngle = 1.5 * Math.PI - normalizedAngle;
+      if (pointerAngle < 0) {
+        pointerAngle += 2 * Math.PI;
+      }
+      const index = Math.floor(pointerAngle / segmentAngle) % numSegments;
+      resultDiv.textContent = "오늘의 메뉴: " + foods[index] + "!";
+    }
+
+    spinBtn.addEventListener("click", spinWheel);
+  </script>
+</body>
+</html>
