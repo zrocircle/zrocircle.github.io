@@ -50,7 +50,7 @@
                     </div>
                     <div>
                         <label for="authorName" class="block text-base font-medium text-gray-700 mb-2">저자명</label>
-                        <input type="text" id="authorName" class="form-input block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm" placeholder="저자 이름을 모두 입력하세요">
+                        <input type="text" id="authorName" class="form-input block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm" placeholder="본인 이름을 입력하세요">
                     </div>
                 </div>
 
@@ -88,9 +88,16 @@
 
         <!-- 결과 표시 영역 -->
         <div id="result-area" class="space-y-6">
-            <div class="flex justify-between items-center bg-blue-50 p-6 rounded-lg">
-                <h2 class="text-2xl font-bold text-gray-800">총 획득 점수</h2>
-                <p id="total-score-text" class="text-4xl font-extrabold text-blue-600">0.00점</p>
+            <div class="bg-blue-50 p-6 rounded-lg space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-gray-800">총 획득 점수</h2>
+                    <p id="total-score-text" class="text-4xl font-extrabold text-blue-600">0.00점</p>
+                </div>
+                <div class="flex justify-end items-center space-x-4 pt-2">
+                     <button id="save-btn" class="btn bg-green-500 text-white font-bold py-2 px-5 rounded-lg shadow-md hover:bg-green-600">JSON으로 저장하기</button>
+                     <button id="load-btn" class="btn bg-gray-500 text-white font-bold py-2 px-5 rounded-lg shadow-md hover:bg-gray-600">JSON 불러오기</button>
+                     <input type="file" id="file-input" class="hidden" accept=".json">
+                </div>
             </div>
 
             <div class="overflow-x-auto">
@@ -128,6 +135,9 @@
         const paperListBody = document.getElementById('paper-list');
         const totalScoreText = document.getElementById('total-score-text');
         const emptyMsg = document.getElementById('empty-table-msg');
+        const saveBtn = document.getElementById('save-btn');
+        const loadBtn = document.getElementById('load-btn');
+        const fileInput = document.getElementById('file-input');
 
         let papers = []; // 모든 논문 데이터를 저장할 배열
 
@@ -139,16 +149,14 @@
 
         // --- 함수 ---
 
-        /** UI를 다시 렌더링하는 메인 함수 */
         function updateUI() {
             renderTable();
             updateTotalScore();
             toggleEmptyMessage();
         }
         
-        /** 테이블에 논문 목록을 렌더링 */
         function renderTable() {
-            paperListBody.innerHTML = ''; // 기존 목록 초기화
+            paperListBody.innerHTML = '';
             papers.forEach(paper => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
@@ -167,18 +175,15 @@
             });
         }
 
-        /** 총 점수를 계산하고 업데이트 */
         function updateTotalScore() {
             const total = papers.reduce((sum, paper) => sum + paper.score, 0);
             totalScoreText.textContent = `${total.toFixed(2)}점`;
         }
         
-        /** 테이블이 비었을 때 메시지 표시/숨김 */
         function toggleEmptyMessage() {
             emptyMsg.style.display = papers.length === 0 ? 'block' : 'none';
         }
 
-        /** 논문 추가 함수 */
         function addPaper() {
             const title = paperTitleInput.value.trim();
             const authorName = authorNameInput.value.trim();
@@ -187,34 +192,16 @@
             const publicationDate = publicationDateInput.value;
             const isMainAuthor = isMainAuthorCheckbox.checked;
 
-            if (!title) {
-                alert('논문 제목을 입력해주세요.');
-                return;
-            }
-             if (!authorName) {
-                alert('저자명을 입력해주세요.');
-                return;
-            }
-            if (isNaN(numAuthors) || numAuthors < 1) {
-                alert('총 저자 수를 1 이상의 숫자로 올바르게 입력해주세요.');
-                return;
-            }
-            if (!publicationDate) {
-                alert('게재 날짜를 선택해주세요.');
+            if (!title || !authorName || !publicationDate || isNaN(numAuthors) || numAuthors < 1) {
+                alert('모든 필드를 올바르게 입력해주세요.');
                 return;
             }
 
             const baseScore = baseScores[journalTier].score;
-            let score = 0;
-            
-            if (isMainAuthor) {
-                score = baseScore * (2 / (numAuthors + 1));
-            } else {
-                score = baseScore * (1 / (numAuthors + 1));
-            }
+            let score = isMainAuthor ? baseScore * (2 / (numAuthors + 1)) : baseScore * (1 / (numAuthors + 1));
 
             const newPaper = {
-                id: Date.now(), // 고유 ID로 사용
+                id: Date.now(),
                 title,
                 authorName,
                 numAuthors,
@@ -227,29 +214,68 @@
             papers.push(newPaper);
             updateUI();
             
-            // 입력 필드 초기화
             document.getElementById('score-form').reset();
             paperTitleInput.focus();
         }
         
-        /** 논문 삭제 함수 */
         function deletePaper(paperId) {
             papers = papers.filter(paper => paper.id !== paperId);
             updateUI();
         }
 
+        function saveToJson() {
+            if (papers.length === 0) {
+                alert('저장할 데이터가 없습니다.');
+                return;
+            }
+            const dataStr = JSON.stringify(papers, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'papers-data.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function loadFromJson(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const loadedData = JSON.parse(e.target.result);
+                    if (Array.isArray(loadedData)) {
+                        papers = loadedData;
+                        updateUI();
+                        alert('데이터를 성공적으로 불러왔습니다.');
+                    } else {
+                        throw new Error('Invalid data format');
+                    }
+                } catch (error) {
+                    alert('파일을 불러오는 중 오류가 발생했습니다. 올바른 JSON 파일인지 확인해주세요.');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = null; // 동일한 파일 다시 불러오기 허용
+        }
+
         // --- 이벤트 리스너 ---
         addPaperBtn.addEventListener('click', addPaper);
+        saveBtn.addEventListener('click', saveToJson);
+        loadBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', loadFromJson);
         
-        // Enter 키로 추가
-        document.getElementById('score-form').addEventListener('keypress', function(event) {
+        document.getElementById('score-form').addEventListener('keypress', (event) => {
             if (event.key === 'Enter') {
                 event.preventDefault();
                 addPaper();
             }
         });
         
-        // 삭제 버튼 이벤트 (이벤트 위임)
         paperListBody.addEventListener('click', (event) => {
             if (event.target.classList.contains('delete-btn')) {
                 const paperId = parseInt(event.target.dataset.id);
@@ -257,7 +283,6 @@
             }
         });
         
-        // 페이지 로드 시 초기 UI 상태 설정
         document.addEventListener('DOMContentLoaded', updateUI);
 
     </script>
