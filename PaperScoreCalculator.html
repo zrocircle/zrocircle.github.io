@@ -33,7 +33,7 @@
     </style>
 </head>
 <body class="bg-gray-50 flex items-center justify-center min-h-screen py-10">
-    <div class="w-full max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-8 md:p-12 space-y-10">
+    <div class="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-xl p-8 md:p-12 space-y-10">
         
         <div class="text-center">
             <h1 class="text-3xl md:text-4xl font-bold text-gray-800">논문 기여도 점수 계산기</h1>
@@ -43,9 +43,15 @@
         <div class="bg-white p-8 rounded-lg border border-gray-200">
             <h2 class="text-2xl font-semibold text-gray-700 mb-6">새 논문 정보 입력</h2>
             <form id="score-form" class="space-y-6">
-                <div>
-                    <label for="paperTitle" class="block text-base font-medium text-gray-700 mb-2">논문 제목</label>
-                    <input type="text" id="paperTitle" class="form-input block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm" placeholder="논문 제목을 입력하세요">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="paperTitle" class="block text-base font-medium text-gray-700 mb-2">논문 제목</label>
+                        <input type="text" id="paperTitle" class="form-input block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm" placeholder="논문 제목을 입력하세요">
+                    </div>
+                    <div>
+                        <label for="authorName" class="block text-base font-medium text-gray-700 mb-2">저자명</label>
+                        <input type="text" id="authorName" class="form-input block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm" placeholder="본인 이름을 입력하세요">
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -88,6 +94,7 @@
                     <thead>
                         <tr class="border-b">
                             <th>논문 제목</th>
+                            <th>저자명</th>
                             <th>총 저자 수</th>
                             <th>논문 등급</th>
                             <th>주저자 여부</th>
@@ -108,6 +115,7 @@
         // --- DOM 요소 및 상태 변수 ---
         const addPaperBtn = document.getElementById('add-paper-btn');
         const paperTitleInput = document.getElementById('paperTitle');
+        const authorNameInput = document.getElementById('authorName');
         const numAuthorsInput = document.getElementById('numAuthors');
         const journalTierSelect = document.getElementById('journalTier');
         const isMainAuthorCheckbox = document.getElementById('isMainAuthor');
@@ -139,6 +147,7 @@
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td class="max-w-xs truncate" title="${paper.title}">${paper.title}</td>
+                    <td>${paper.authorName}</td>
                     <td>${paper.numAuthors}명</td>
                     <td>${baseScores[paper.journalTier].name}</td>
                     <td>${paper.isMainAuthor ? '예' : '아니오'}</td>
@@ -165,12 +174,17 @@
         /** 논문 추가 함수 */
         function addPaper() {
             const title = paperTitleInput.value.trim();
+            const authorName = authorNameInput.value.trim();
             const numAuthors = parseInt(numAuthorsInput.value);
             const journalTier = journalTierSelect.value;
             const isMainAuthor = isMainAuthorCheckbox.checked;
 
             if (!title) {
                 alert('논문 제목을 입력해주세요.');
+                return;
+            }
+             if (!authorName) {
+                alert('저자명을 입력해주세요.');
                 return;
             }
             if (isNaN(numAuthors) || numAuthors < 1) {
@@ -190,6 +204,7 @@
             const newPaper = {
                 id: Date.now(), // 고유 ID로 사용
                 title,
+                authorName,
                 numAuthors,
                 journalTier,
                 isMainAuthor,
