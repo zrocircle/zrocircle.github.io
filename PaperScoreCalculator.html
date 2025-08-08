@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>논문 점수 계산기 (누적)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5);
+            border-color: #3b82f6;
+        }
+        .btn {
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .btn:active {
+            transform: scale(0.98) translateY(0);
+        }
+        .table-auto th {
+            @apply text-left p-4 font-medium text-gray-600 bg-gray-50;
+        }
+        .table-auto td {
+            @apply p-4 border-b border-gray-200;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen py-10">
+    <div class="w-full max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-8 md:p-12 space-y-10">
+        
+        <div class="text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">논문 기여도 점수 계산기</h1>
+            <p class="text-gray-500 mt-2">논문 정보를 추가하여 총 획득 점수를 관리하세요.</p>
+        </div>
+
+        <div class="bg-white p-8 rounded-lg border border-gray-200">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-6">새 논문 정보 입력</h2>
+            <form id="score-form" class="space-y-6">
+                <div>
+                    <label for="paperTitle" class="block text-base font-medium text-gray-700 mb-2">논문 제목</label>
+                    <input type="text" id="paperTitle" class="form-input block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm" placeholder="논문 제목을 입력하세요">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="numAuthors" class="block text-base font-medium text-gray-700 mb-2">총 저자 수 (n)</label>
+                        <input type="number" id="numAuthors" min="1" class="form-input block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm" placeholder="예: 3">
+                    </div>
+                    <div>
+                        <label for="journalTier" class="block text-base font-medium text-gray-700 mb-2">논문 등급</label>
+                        <select id="journalTier" class="form-select block w-full px-4 py-3 border border-gray-300 bg-white rounded-lg shadow-sm">
+                            <option value="scie">SCI(E) (300점)</option>
+                            <option value="scopus">Scopus (200점)</option>
+                            <option value="kci">국내등재지 (100점)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-center pt-2">
+                    <input id="isMainAuthor" type="checkbox" class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    <label for="isMainAuthor" class="ml-3 block text-base font-medium text-gray-800">본인이 주저자 (제1저자 또는 교신저자) 입니까?</label>
+                </div>
+
+                <div class="pt-4">
+                    <button type="button" id="add-paper-btn" class="btn w-full bg-blue-600 text-white text-xl font-bold py-3 px-4 rounded-lg shadow-md hover:bg-blue-700">
+                        논문 추가하기
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- 결과 표시 영역 -->
+        <div id="result-area" class="space-y-6">
+            <div class="flex justify-between items-center bg-blue-50 p-6 rounded-lg">
+                <h2 class="text-2xl font-bold text-gray-800">총 획득 점수</h2>
+                <p id="total-score-text" class="text-4xl font-extrabold text-blue-600">0.00점</p>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full table-auto text-sm md:text-base">
+                    <thead>
+                        <tr class="border-b">
+                            <th>논문 제목</th>
+                            <th>총 저자 수</th>
+                            <th>논문 등급</th>
+                            <th>주저자 여부</th>
+                            <th>획득 점수</th>
+                            <th>관리</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paper-list">
+                        <!-- 논문 목록이 여기에 추가됩니다 -->
+                    </tbody>
+                </table>
+                 <p id="empty-table-msg" class="text-center text-gray-500 py-10">아직 추가된 논문이 없습니다.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM 요소 및 상태 변수 ---
+        const addPaperBtn = document.getElementById('add-paper-btn');
+        const paperTitleInput = document.getElementById('paperTitle');
+        const numAuthorsInput = document.getElementById('numAuthors');
+        const journalTierSelect = document.getElementById('journalTier');
+        const isMainAuthorCheckbox = document.getElementById('isMainAuthor');
+        const paperListBody = document.getElementById('paper-list');
+        const totalScoreText = document.getElementById('total-score-text');
+        const emptyMsg = document.getElementById('empty-table-msg');
+
+        let papers = []; // 모든 논문 데이터를 저장할 배열
+
+        const baseScores = {
+            'scie': { name: 'SCI(E)', score: 300 },
+            'scopus': { name: 'Scopus', score: 200 },
+            'kci': { name: '국내등재지', score: 100 }
+        };
+
+        // --- 함수 ---
+
+        /** UI를 다시 렌더링하는 메인 함수 */
+        function updateUI() {
+            renderTable();
+            updateTotalScore();
+            toggleEmptyMessage();
+        }
+        
+        /** 테이블에 논문 목록을 렌더링 */
+        function renderTable() {
+            paperListBody.innerHTML = ''; // 기존 목록 초기화
+            papers.forEach(paper => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="max-w-xs truncate" title="${paper.title}">${paper.title}</td>
+                    <td>${paper.numAuthors}명</td>
+                    <td>${baseScores[paper.journalTier].name}</td>
+                    <td>${paper.isMainAuthor ? '예' : '아니오'}</td>
+                    <td class="font-bold text-blue-600">${paper.score.toFixed(2)}점</td>
+                    <td>
+                        <button class="btn delete-btn text-red-500 hover:text-red-700 font-semibold" data-id="${paper.id}">삭제</button>
+                    </td>
+                `;
+                paperListBody.appendChild(row);
+            });
+        }
+
+        /** 총 점수를 계산하고 업데이트 */
+        function updateTotalScore() {
+            const total = papers.reduce((sum, paper) => sum + paper.score, 0);
+            totalScoreText.textContent = `${total.toFixed(2)}점`;
+        }
+        
+        /** 테이블이 비었을 때 메시지 표시/숨김 */
+        function toggleEmptyMessage() {
+            emptyMsg.style.display = papers.length === 0 ? 'block' : 'none';
+        }
+
+        /** 논문 추가 함수 */
+        function addPaper() {
+            const title = paperTitleInput.value.trim();
+            const numAuthors = parseInt(numAuthorsInput.value);
+            const journalTier = journalTierSelect.value;
+            const isMainAuthor = isMainAuthorCheckbox.checked;
+
+            if (!title) {
+                alert('논문 제목을 입력해주세요.');
+                return;
+            }
+            if (isNaN(numAuthors) || numAuthors < 1) {
+                alert('총 저자 수를 1 이상의 숫자로 올바르게 입력해주세요.');
+                return;
+            }
+
+            const baseScore = baseScores[journalTier].score;
+            let score = 0;
+            
+            if (isMainAuthor) {
+                score = baseScore * (2 / (numAuthors + 1));
+            } else {
+                score = baseScore * (1 / (numAuthors + 1));
+            }
+
+            const newPaper = {
+                id: Date.now(), // 고유 ID로 사용
+                title,
+                numAuthors,
+                journalTier,
+                isMainAuthor,
+                score
+            };
+
+            papers.push(newPaper);
+            updateUI();
+            
+            // 입력 필드 초기화
+            document.getElementById('score-form').reset();
+            paperTitleInput.focus();
+        }
+        
+        /** 논문 삭제 함수 */
+        function deletePaper(paperId) {
+            papers = papers.filter(paper => paper.id !== paperId);
+            updateUI();
+        }
+
+        // --- 이벤트 리스너 ---
+        addPaperBtn.addEventListener('click', addPaper);
+        
+        // Enter 키로 추가
+        document.getElementById('score-form').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                addPaper();
+            }
+        });
+        
+        // 삭제 버튼 이벤트 (이벤트 위임)
+        paperListBody.addEventListener('click', (event) => {
+            if (event.target.classList.contains('delete-btn')) {
+                const paperId = parseInt(event.target.dataset.id);
+                deletePaper(paperId);
+            }
+        });
+        
+        // 페이지 로드 시 초기 UI 상태 설정
+        document.addEventListener('DOMContentLoaded', updateUI);
+
+    </script>
+</body>
+</html>
