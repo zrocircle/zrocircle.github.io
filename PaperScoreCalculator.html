@@ -28,12 +28,12 @@
             @apply text-left p-4 font-medium text-gray-600 bg-gray-50;
         }
         .table-auto td {
-            @apply p-4 border-b border-gray-200;
+            @apply p-4 border-b border-gray-200 align-middle;
         }
     </style>
 </head>
 <body class="bg-gray-50 flex items-center justify-center min-h-screen py-10">
-    <div class="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-xl p-8 md:p-12 space-y-10">
+    <div class="w-full max-w-6xl mx-auto bg-white rounded-2xl shadow-xl p-8 md:p-12 space-y-10">
         
         <div class="text-center">
             <h1 class="text-3xl md:text-4xl font-bold text-gray-800">논문 기여도 점수 계산기</h1>
@@ -54,7 +54,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <label for="numAuthors" class="block text-base font-medium text-gray-700 mb-2">총 저자 수 (n)</label>
                         <input type="number" id="numAuthors" min="1" class="form-input block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm" placeholder="예: 3">
@@ -66,6 +66,10 @@
                             <option value="scopus">Scopus (200점)</option>
                             <option value="kci">국내등재지 (100점)</option>
                         </select>
+                    </div>
+                     <div>
+                        <label for="publicationDate" class="block text-base font-medium text-gray-700 mb-2">게재 날짜</label>
+                        <input type="date" id="publicationDate" class="form-input block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm">
                     </div>
                 </div>
 
@@ -95,6 +99,7 @@
                         <tr class="border-b">
                             <th>논문 제목</th>
                             <th>저자명</th>
+                            <th>게재 날짜</th>
                             <th>총 저자 수</th>
                             <th>논문 등급</th>
                             <th>주저자 여부</th>
@@ -118,6 +123,7 @@
         const authorNameInput = document.getElementById('authorName');
         const numAuthorsInput = document.getElementById('numAuthors');
         const journalTierSelect = document.getElementById('journalTier');
+        const publicationDateInput = document.getElementById('publicationDate');
         const isMainAuthorCheckbox = document.getElementById('isMainAuthor');
         const paperListBody = document.getElementById('paper-list');
         const totalScoreText = document.getElementById('total-score-text');
@@ -148,6 +154,7 @@
                 row.innerHTML = `
                     <td class="max-w-xs truncate" title="${paper.title}">${paper.title}</td>
                     <td>${paper.authorName}</td>
+                    <td>${paper.publicationDate}</td>
                     <td>${paper.numAuthors}명</td>
                     <td>${baseScores[paper.journalTier].name}</td>
                     <td>${paper.isMainAuthor ? '예' : '아니오'}</td>
@@ -177,6 +184,7 @@
             const authorName = authorNameInput.value.trim();
             const numAuthors = parseInt(numAuthorsInput.value);
             const journalTier = journalTierSelect.value;
+            const publicationDate = publicationDateInput.value;
             const isMainAuthor = isMainAuthorCheckbox.checked;
 
             if (!title) {
@@ -189,6 +197,10 @@
             }
             if (isNaN(numAuthors) || numAuthors < 1) {
                 alert('총 저자 수를 1 이상의 숫자로 올바르게 입력해주세요.');
+                return;
+            }
+            if (!publicationDate) {
+                alert('게재 날짜를 선택해주세요.');
                 return;
             }
 
@@ -207,6 +219,7 @@
                 authorName,
                 numAuthors,
                 journalTier,
+                publicationDate,
                 isMainAuthor,
                 score
             };
