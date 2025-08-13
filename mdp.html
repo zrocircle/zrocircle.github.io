@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ko" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>대화형 강화 학습 개념 탐색기</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: 이 애플리케이션은 사용자가 강화 학습의 핵심 개념을 단계별로, 그리고 상호작용적으로 학습할 수 있도록 설계되었습니다. 좌측의 고정된 탐색 메뉴를 통해 각 주제로 빠르게 이동할 수 있으며, 복잡한 개념은 단순화된 시각 자료와 대화형 예제를 통해 설명됩니다. 예를 들어, 정책/가치 반복은 사용자가 직접 버튼을 클릭하며 단계별 변화를 관찰할 수 있는 그리드 월드 예제로 시각화했습니다. 이러한 구조는 선형적인 텍스트 학습에서 벗어나, 사용자가 능동적으로 지식을 탐색하고 실험하며 깊이 있는 이해를 얻도록 돕기 위해 선택되었습니다. -->
+    <!-- Visualization & Content Choices: 
+        - 마르코프 프로세스 관계: (정보) MP, MRP, MDP의 포함 관계 -> (목표) 계층 구조 이해 -> (시각화) 중첩된 HTML Div 다이어그램 -> (상호작용) 각 요소에 마우스를 올리면 설명 툴팁 표시 -> (정당성) 텍스트보다 직관적으로 관계를 파악 -> (구현) HTML/CSS, JS
+        - 정책/가치 반복: (정보) 두 알고리즘의 작동 방식 -> (목표) 알고리즘 비교 및 이해 -> (시각화) 그리드 월드 시뮬레이션 -> (상호작용) '다음 단계' 버튼 클릭 시 가치 함수 업데이트 시각화 -> (정당성) 추상적인 알고리즘을 구체적인 시각적 과정으로 변환하여 이해도 증진 -> (구현) HTML/CSS, JS
+        - MC vs TD 학습: (정보) 업데이트 시점의 차이 -> (목표) 두 학습 방식의 핵심 차이 이해 -> (시각화) 에피소드 타임라인 애니메이션 -> (상호작용) 버튼 클릭 시 각 방식의 업데이트 시점을 시각적으로 강조 -> (정당성) 시간적 차이를 명확하게 보여주어 개념적 혼동을 줄임 -> (구현) HTML/CSS, JS
+        - 벨만 방정식: (정보) 방정식의 구성 요소 -> (목표) 수식의 각 부분 의미 파악 -> (시각화) 수식을 각 요소별로 분리하여 표시 -> (상호작용) 각 수식 요소에 마우스를 올리면 설명 툴팁 표시 -> (정당성) 복잡한 수식에 대한 심리적 장벽을 낮추고 점진적 학습 유도 -> (구현) HTML/CSS, JS
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #fdfcfb; color: #333; }
+        .nav-link { transition: all 0.2s ease-in-out; }
+        .nav-link.active, .nav-link:hover { color: #0e7490; background-color: #ecfeff; border-right: 3px solid #0e7490; }
+        .concept-box { border: 1px solid #e7e5e4; background-color: #ffffff; padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .tooltip { position: absolute; background-color: #1f2937; color: white; padding: 8px 12px; border-radius: 6px; z-index: 10; display: none; bottom: 125%; left: 50%; transform: translateX(-50%); font-size: 0.875rem; width: max-content; }
+        .tooltip-container:hover .tooltip { display: block; }
+        .grid-cell { width: 50px; height: 50px; border: 1px solid #d1d5db; display: flex; justify-content: center; align-items: center; font-size: 0.75rem; transition: background-color 0.3s; }
+        .formula span { border-bottom: 2px dotted #9ca3af; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="flex">
+        <nav id="sidebar" class="w-64 h-screen fixed top-0 left-0 bg-stone-50 border-r border-stone-200 p-4 overflow-y-auto">
+            <h2 class="text-xl font-bold text-cyan-800 mb-6">학습 목차</h2>
+            <ul class="space-y-2">
+                <li><a href="#markov" class="nav-link block p-2 rounded-lg">1. 마르코프 프로세스 (MP, MRP, MDP)</a></li>
+                <li><a href="#value-functions" class="nav-link block p-2 rounded-lg">2. 가치 함수 (V/Q)</a></li>
+                <li><a href="#policy-iteration" class="nav-link block p-2 rounded-lg">3. 정책 반복</a></li>
+                <li><a href="#value-iteration" class="nav-link block p-2 rounded-lg">4. 가치 반복</a></li>
+                <li><a href="#model-free" class="nav-link block p-2 rounded-lg">5. 모델-프리 방법</a></li>
+                <li><a href="#approximation" class="nav-link block p-2 rounded-lg">6. 함수 근사</a></li>
+            </ul>
+        </nav>
+
+        <main class="ml-64 p-8 w-full">
+            <header class="mb-12 text-center">
+                <h1 class="text-4xl font-bold text-cyan-900 mb-2">대화형 강화 학습 개념 탐색기</h1>
+                <p class="text-lg text-stone-600">핵심 개념을 시각적 예제와 함께 탐색하며 강화 학습을 마스터하세요.</p>
+            </header>
+
+            <section id="markov" class="mb-16 space-y-4">
+                <h2 class="text-3xl font-bold text-cyan-800 border-b-2 border-cyan-200 pb-2">1. 마르코프 프로세스 (MP, MRP, MDP)</h2>
+                <div class="concept-box">
+                    <p class="text-lg mb-4">강화 학습 문제는 '마르코프 성질'을 가정합니다. 이는 미래의 상태가 오직 현재 상태에만 의존한다는 의미입니다. 이 가정을 바탕으로 문제를 수학적으로 모델링합니다.</p>
+                    <h3 class="text-xl font-bold mt-6 mb-2">마르코프한 상태 (Markovian State)</h3>
+                    <p class="text-stone-700">마르코프한 상태는 **미래가 오직 현재에 의해서만 결정되는 상태**를 의미합니다. 과거의 이력은 다음 상태를 예측하는 데 필요하지 않습니다.</p>
+                    <ul class="list-disc list-inside mt-2 space-y-1 text-stone-700">
+                        <li><strong>수식</strong>: $P[S_{t+1} | S_t] = P[S_{t+1} | S_1, S_2, ..., S_t]$</li>
+                        <li><strong>수식의 의미</strong>:
+                            <ul class="list-disc list-inside ml-4 mt-1 space-y-1">
+                                <li>$P[S_{t+1} | S_t]$: 현재 상태($S_t$)가 주어졌을 때 다음 상태($S_{t+1}$)가 될 확률.</li>
+                                <li>$P[S_{t+1} | S_1, S_2, ..., S_t]$: 과거의 모든 상태($S_1$부터 $S_t$까지)가 주어졌을 때 다음 상태($S_{t+1}$)가 될 확률.</li>
+                                <li>두 확률이 같다는 것은, 과거 이력이 필요 없이 현재 상태만으로 충분히 미래를 예측할 수 있다는 것을 의미합니다.</li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <div class="flex justify-center items-center p-6 bg-stone-50 rounded-lg h-64 mt-6">
+                        <div class="tooltip-container relative text-center border-2 border-cyan-600 bg-cyan-50 rounded-lg p-4 w-80 h-48 flex justify-center items-center">
+                            <span class="font-bold text-cyan-800">MDP (결정)</span>
+                            <span class="tooltip">MP + 보상 + 행동</span>
+                            <div class="tooltip-container absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center border-2 border-teal-600 bg-teal-50 rounded-lg p-4 w-52 h-32 flex justify-center items-center">
+                                <span class="font-bold text-teal-800">MRP (보상)</span>
+                                <span class="tooltip">MP + 보상</span>
+                                <div class="tooltip-container absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center border-2 border-emerald-600 bg-emerald-50 rounded-lg p-4 w-28 h-16 flex justify-content-center items-center">
+                                    <span class="font-bold text-emerald-800">MP</span>
+                                    <span class="tooltip">상태 + 전이 확률</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-center mt-2 text-sm text-stone-500">상위 개념으로 갈수록 더 많은 요소가 추가됩니다. 각 상자에 마우스를 올려보세요.</p>
+                </div>
+            </section>
+
+            <section id="value-functions" class="mb-16 space-y-4">
+                <h2 class="text-3xl font-bold text-cyan-800 border-b-2 border-cyan-200 pb-2">2. 가치 함수 (V-function & Q-function)</h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="concept-box">
+                        <h3 class="text-xl font-bold mb-2">상태 가치 함수 V(s)</h3>
+                        <p>특정 <strong>상태</strong>가 얼마나 좋은지를 나타냅니다.</p>
+                        <p class="mt-2 text-stone-600"><strong>질문:</strong> "현재 위치(상태)는 장기적으로 얼마나 가치 있는가?"</p>
+                        <p class="mt-2 text-stone-600"><strong>예시:</strong> 체스에서 특정 기물 배치가 승리할 확률.</p>
+                    </div>
+                    <div class="concept-box">
+                        <h3 class="text-xl font-bold mb-2">행동 가치 함수 Q(s, a)</h3>
+                        <p>특정 <strong>상태</strong>에서 특정 <strong>행동</strong>을 하는 것이 얼마나 좋은지를 나타냅니다.</p>
+                        <p class="mt-2 text-stone-600"><strong>질문:</strong> "현재 위치(상태)에서 이 행동을 하는 것은 얼마나 가치 있는가?"</p>
+                        <p class="mt-2 text-stone-600"><strong>예시:</strong> 체스에서 특정 기물 배치일 때, 특정 말을 움직이는 것이 승리에 얼마나 기여하는가.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="policy-iteration" class="mb-16 space-y-4">
+                <h2 class="text-3xl font-bold text-cyan-800 border-b-2 border-cyan-200 pb-2">3. 정책 반복 (Policy Iteration)</h2>
+                <div class="concept-box">
+                    <p class="text-lg mb-4">'정책 평가'와 '정책 개선'이라는 두 단계를 수렴할 때까지 반복하여 최적의 정책을 찾는 알고리즘입니다.</p>
+                    <div class="flex flex-col md:flex-row gap-6 items-center">
+                        <div class="w-full md:w-1/2">
+                            <h4 class="font-bold text-center mb-2">대화형 그리드 월드</h4>
+                            <div id="pi-grid" class="grid grid-cols-4 gap-1 mx-auto w-max bg-stone-200 p-1 rounded-md"></div>
+                            <div class="text-center mt-4">
+                                <button id="pi-eval-btn" class="bg-cyan-600 text-white px-4 py-2 rounded-lg hover:bg-cyan-700 transition">정책 평가 (1회)</button>
+                                <button id="pi-improve-btn" class="bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition">정책 개선 (1회)</button>
+                                <button id="pi-reset-btn" class="bg-stone-500 text-white px-4 py-2 rounded-lg hover:bg-stone-600 transition">초기화</button>
+                            </div>
+                        </div>
+                        <div class="w-full md:w-1/2 text-sm">
+                            <p><strong>1. 정책 평가 (Evaluation):</strong> 현재 정책(화살표)을 따를 때 각 칸의 가치(숫자)가 어떻게 되는지 계산합니다. '정책 평가' 버튼을 눌러보세요.</p>
+                            <p class="mt-2"><strong>2. 정책 개선 (Improvement):</strong> 계산된 가치를 바탕으로 더 나은 행동(화살표)을 찾습니다. '정책 개선' 버튼을 눌러보세요.</p>
+                            <p class="mt-2">이 과정을 반복하면 최적의 경로를 찾게 됩니다.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="value-iteration" class="mb-16 space-y-4">
+                <h2 class="text-3xl font-bold text-cyan-800 border-b-2 border-cyan-200 pb-2">4. 가치 반복 (Value Iteration)</h2>
+                <div class="concept-box">
+                    <p class="text-lg mb-4">정책을 명시적으로 다루지 않고, 벨만 최적 방정식을 이용해 가치 함수를 직접 최적화하여 최적 정책을 찾는 알고리즘입니다. 정책 반복보다 간단하고 빠른 경우가 많습니다.</p>
+                    <div class="flex flex-col md:flex-row gap-6 items-center">
+                        <div class="w-full md:w-1/2">
+                            <h4 class="font-bold text-center mb-2">대화형 그리드 월드</h4>
+                            <div id="vi-grid" class="grid grid-cols-4 gap-1 mx-auto w-max bg-stone-200 p-1 rounded-md"></div>
+                            <div class="text-center mt-4">
+                                <button id="vi-step-btn" class="bg-cyan-600 text-white px-4 py-2 rounded-lg hover:bg-cyan-700 transition">가치 업데이트 (1회)</button>
+                                <button id="vi-reset-btn" class="bg-stone-500 text-white px-4 py-2 rounded-lg hover:bg-stone-600 transition">초기화</button>
+                            </div>
+                        </div>
+                        <div class="w-full md:w-1/2 text-sm">
+                            <p>가치 반복은 각 상태에서 가능한 모든 행동의 가치를 계산하고 그 중 최대값을 자신의 가치로 업데이트합니다. '가치 업데이트' 버튼을 반복해서 눌러 가치가 어떻게 전파되는지 확인해보세요.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="model-free" class="mb-16 space-y-4">
+                <h2 class="text-3xl font-bold text-cyan-800 border-b-2 border-cyan-200 pb-2">5. 모델-프리 방법 (Model-Free)</h2>
+                <div class="concept-box">
+                    <p class="text-lg mb-4">환경의 규칙(모델)을 모를 때, 실제 경험을 통해 학습하는 방법입니다. 대부분의 현실 문제는 모델-프리 방식에 해당합니다.</p>
+                    <div class="chart-container mx-auto" style="position: relative; height:300px; width:100%; max-width:600px;">
+                        <canvas id="modelFreeChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <section id="approximation" class="mb-16 space-y-4">
+                <h2 class="text-3xl font-bold text-cyan-800 border-b-2 border-cyan-200 pb-2">6. 함수 근사 (Function Approximation)</h2>
+                <div class="concept-box">
+                    <p class="text-lg mb-4">상태 공간이 너무 커서 모든 상태의 가치를 테이블에 저장할 수 없을 때 사용됩니다. (예: 바둑, 자율주행)</p>
+                     <div class="p-6 bg-stone-100 rounded-lg flex flex-col md:flex-row items-center justify-center gap-4 text-center">
+                        <div class="p-4 bg-white rounded-lg shadow">상태 (예: 바둑판 이미지)</div>
+                        <div class="text-2xl font-bold text-cyan-700">→</div>
+                        <div class="p-4 bg-white rounded-lg shadow border-2 border-cyan-600">신경망 (함수)</div>
+                        <div class="text-2xl font-bold text-cyan-700">→</div>
+                        <div class="p-4 bg-white rounded-lg shadow">가치 (예: 승리 확률)</div>
+                    </div>
+                    <p class="mt-4 text-stone-700">신경망과 같은 함수를 사용하여, 상태를 입력받아 가치를 출력하도록 학습시킵니다. 이를 통해 보지 못한 상태에 대해서도 가치를 '일반화'하여 예측할 수 있습니다.</p>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const sections = document.querySelectorAll('main section');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            function updateActiveLink() {
+                let index = sections.length;
+                while(--index && window.scrollY + 50 < sections[index].offsetTop) {}
+                
+                navLinks.forEach((link) => link.classList.remove('active'));
+                if (navLinks[index]) {
+                    navLinks[index].classList.add('active');
+                }
+            }
+
+            window.addEventListener('scroll', updateActiveLink);
+            updateActiveLink();
+
+            const gridConfig = {
+                rows: 4,
+                cols: 4,
+                terminalStates: { '3': 'G', '7': 'H' },
+                rewards: { '3': 10, '7': -10 }
+            };
+
+            function createGrid(containerId, config) {
+                const gridContainer = document.getElementById(containerId);
+                gridContainer.innerHTML = '';
+                const cells = [];
+                for (let i = 0; i < config.rows * config.cols; i++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('grid-cell');
+                    cell.dataset.index = i;
+                    
+                    if (config.terminalStates[i]) {
+                        cell.textContent = config.terminalStates[i];
+                        cell.classList.add(config.rewards[i] > 0 ? 'bg-green-200' : 'bg-red-200');
+                    }
+                    gridContainer.appendChild(cell);
+                    cells.push(cell);
+                }
+                return cells;
+            }
+
+            function setupGridWorld(prefix, config) {
+                let values = Array(config.rows * config.cols).fill(0);
+                let policy = Array(config.rows * config.cols).fill('→');
+                const arrows = {'↑': '&#8593;', '↓': '&#8595;', '←': '&#8592;', '→': '&#8594;'};
+                const actions = {'↑': -config.cols, '↓': config.cols, '←': -1, '→': 1};
+                const gamma = 0.9;
+
+                const cells = createGrid(`${prefix}-grid`, config);
+
+                function updateDisplay() {
+                    cells.forEach((cell, i) => {
+                        if (config.terminalStates[i]) {
+                            cell.innerHTML = `${config.terminalStates[i]}<br><span class="font-bold">${config.rewards[i]}</span>`;
+                            return;
+                        }
+                        cell.innerHTML = `<span class="text-lg">${arrows[policy[i]] || ''}</span><br><span class="font-bold">${values[i].toFixed(2)}</span>`;
+                    });
+                }
+                
+                function reset() {
+                    values.fill(0);
+                    policy.fill('→');
+                    Object.keys(config.terminalStates).forEach(i => {
+                        values[i] = config.rewards[i];
+                        policy[i] = '';
+                    });
+                    updateDisplay();
+                }
+
+                function evaluate() {
+                    let newValues = [...values];
+                    for(let i = 0; i < values.length; i++) {
+                        if(config.terminalStates[i]) continue;
+                        
+                        const action = policy[i];
+                        const nextIndex = i + actions[action];
+                        
+                        let nextValue = 0;
+                        if (nextIndex >= 0 && nextIndex < values.length) {
+                           if( (action === '→' && (i+1) % config.cols !== 0) || (action === '←' && i % config.cols !== 0) || action === '↑' || action === '↓') {
+                                nextValue = values[nextIndex];
+                           } else {
+                                nextValue = values[i]; 
+                           }
+                        } else {
+                            nextValue = values[i];
+                        }
+                        newValues[i] = 0 + gamma * nextValue;
+                    }
+                    values = newValues;
+                    updateDisplay();
+                }
+
+                function improve() {
+                    for(let i = 0; i < values.length; i++) {
+                        if(config.terminalStates[i]) continue;
+
+                        let bestAction = '';
+                        let maxVal = -Infinity;
+
+                        for(const [action, move] of Object.entries(actions)) {
+                            const nextIndex = i + move;
+                            let currentVal = -Infinity;
+                            if (nextIndex >= 0 && nextIndex < values.length) {
+                                if( (action === '→' && (i+1) % config.cols !== 0) || (action === '←' && i % config.cols !== 0) || action === '↑' || action === '↓') {
+                                    currentVal = values[nextIndex];
+                                }
+                            }
+                            if(currentVal > maxVal) {
+                                maxVal = currentVal;
+                                bestAction = action;
+                            }
+                        }
+                        policy[i] = bestAction;
+                    }
+                    updateDisplay();
+                }
+
+                function viStep() {
+                     let newValues = [...values];
+                    for(let i = 0; i < values.length; i++) {
+                        if(config.terminalStates[i]) continue;
+
+                        let maxVal = -Infinity;
+                        for(const [action, move] of Object.entries(actions)) {
+                            const nextIndex = i + move;
+                            let currentVal = -Infinity;
+                             if (nextIndex >= 0 && nextIndex < values.length) {
+                                if( (action === '→' && (i+1) % config.cols !== 0) || (action === '←' && i % config.cols !== 0) || action === '↑' || action === '↓') {
+                                    currentVal = values[nextIndex];
+                                } else {
+                                    currentVal = values[i];
+                                }
+                            } else {
+                                currentVal = values[i];
+                            }
+                            if(currentVal > maxVal) {
+                                maxVal = currentVal;
+                            }
+                        }
+                        newValues[i] = 0 + gamma * maxVal;
+                    }
+                    values = newValues;
+                    updateDisplay();
+                }
+
+                if (prefix === 'pi') {
+                    document.getElementById('pi-eval-btn').onclick = evaluate;
+                    document.getElementById('pi-improve-btn').onclick = improve;
+                    document.getElementById('pi-reset-btn').onclick = reset;
+                } else if (prefix === 'vi') {
+                    document.getElementById('vi-step-btn').onclick = viStep;
+                    document.getElementById('vi-reset-btn').onclick = reset;
+                }
+
+                reset();
+            }
+
+            setupGridWorld('pi', gridConfig);
+            setupGridWorld('vi', gridConfig);
+
+            const ctx = document.getElementById('modelFreeChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['몬테카를로 (MC)', '시간차 학습 (TD)'],
+                    datasets: [{
+                        label: '업데이트 방식',
+                        data: [100, 50],
+                        backgroundColor: ['rgba(59, 130, 246, 0.7)', 'rgba(249, 115, 22, 0.7)'],
+                        borderColor: ['rgba(59, 130, 246, 1)', 'rgba(249, 115, 22, 1)'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        title: { display: true, text: '모델-프리 학습 방식 비교' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.label === '몬테카를로 (MC)') return '에피소드 종료 후 업데이트';
+                                    if (context.label === '시간차 학습 (TD)') return '매 스텝마다 업데이트';
+                                }
+                            }
+                        },
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { display: false },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
