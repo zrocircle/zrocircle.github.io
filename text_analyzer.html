@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>텍스트 문장 분석기</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f1f5f9; /* bg-slate-100 */
+        }
+        /* 밝은 테마에 맞는 배경 패턴 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 40%),
+                              radial-gradient(circle at bottom left, rgba(168, 85, 247, 0.1), transparent 50%);
+            z-index: -1;
+        }
+
+        .tag {
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            margin-left: 6px;
+            font-weight: 500;
+        }
+        .tag-noun { background-color: #dbeafe; color: #1e40af; } /* blue-100, blue-800 */
+        .tag-verb { background-color: #d1fae5; color: #065f46; } /* green-100, green-800 */
+        .tag-adjective { background-color: #a7f3d0; color: #047857; } /* emerald-100, emerald-800 */
+        .tag-particle { background-color: #e5e7eb; color: #374151; } /* gray-200, gray-700 */
+        .tag-unknown { background-color: #ffedd5; color: #9a3412; } /* orange-100, orange-800 */
+        
+        .tag-org { background-color: #e9d5ff; color: #5b21b6; } /* purple-100, purple-800 */
+        .tag-loc { background-color: #fce7f3; color: #9d174d; } /* pink-100, pink-800 */
+        .tag-per { background-color: #ccfbf1; color: #0f766e; } /* teal-100, teal-700 */
+
+        .analysis-card {
+            background-color: rgba(255, 255, 255, 0.7);
+            border: 1px solid #e2e8f0; /* slate-200 */
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+        }
+        .analysis-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .card-header-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.5rem;
+            margin-right: 0.75rem;
+        }
+    </style>
+</head>
+<body class="text-slate-800 p-4 sm:p-8">
+    <div class="max-w-4xl mx-auto">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-bold mb-2 text-slate-900">AI 텍스트 문장 분석기</h1>
+            <p class="text-slate-600">자연어 처리(NLP) 기술을 통해 문장의 구조와 의미를 분석합니다.</p>
+        </header>
+
+        <div class="bg-white/70 backdrop-blur-sm border border-slate-200 p-6 rounded-xl shadow-lg mb-8">
+            <textarea id="text-input" class="w-full h-32 p-4 bg-slate-100 text-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none placeholder-slate-500" placeholder="분석할 한국어 문장을 입력하세요."></textarea>
+            <div class="mt-4 flex flex-wrap gap-2">
+                <button class="example-btn bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm py-1 px-3 rounded-full transition-colors">삼성전자는 베트남에 공장을 건설했다.</button>
+                <button class="example-btn bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm py-1 px-3 rounded-full transition-colors">이 영화는 정말 최고로 멋진 작품이다!</button>
+                 <button class="example-btn bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm py-1 px-3 rounded-full transition-colors">오늘 날씨가 너무 나쁘다.</button>
+            </div>
+            <button id="analyze-btn" class="w-full mt-4 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 transform hover:-translate-y-0.5">
+                분석하기
+            </button>
+        </div>
+        
+        <div id="loader" class="text-center my-8 hidden">
+             <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p class="mt-2 text-slate-500">문장을 분석하고 있습니다...</p>
+        </div>
+
+        <div id="results" class="space-y-6">
+            <div id="token-card" class="analysis-card hidden">
+                <div class="flex items-center mb-4">
+                    <div class="card-header-icon bg-blue-100 text-blue-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></div>
+                    <div>
+                        <h2 class="text-xl font-bold text-blue-700">1. 토큰화 (Tokenization)</h2>
+                        <p class="text-slate-600 text-sm">문장을 의미있는 가장 작은 단위인 '토큰'으로 분리합니다.</p>
+                    </div>
+                </div>
+                <div id="token-output" class="flex flex-wrap gap-2"></div>
+            </div>
+
+            <div id="pos-card" class="analysis-card hidden">
+                <div class="flex items-center mb-4">
+                    <div class="card-header-icon bg-green-100 text-green-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5a2 2 0 012 2v5a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2zm0 0v11m0-11h11m0 0v11m0-11L3 3m11 11L3 3" /></svg></div>
+                    <div>
+                        <h2 class="text-xl font-bold text-green-700">2. 품사 태깅 (POS Tagging)</h2>
+                        <p class="text-slate-600 text-sm">각 토큰에 문법적 품사(명사, 동사 등)를 할당합니다.</p>
+                    </div>
+                </div>
+                <div id="pos-output" class="flex flex-wrap gap-x-4 gap-y-2"></div>
+            </div>
+
+            <div id="ner-card" class="analysis-card hidden">
+                 <div class="flex items-center mb-4">
+                    <div class="card-header-icon bg-purple-100 text-purple-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 012-2h4a2 2 0 012 2v1m-4 0h4" /></svg></div>
+                    <div>
+                        <h2 class="text-xl font-bold text-purple-700">3. 개체명 인식 (NER)</h2>
+                        <p class="text-slate-600 text-sm">문장 내에서 이름, 장소, 기관 등 고유 개체를 식별합니다.</p>
+                    </div>
+                </div>
+                <div id="ner-output" class="text-lg leading-relaxed"></div>
+            </div>
+
+            <div id="parse-card" class="analysis-card hidden">
+                <div class="flex items-center mb-4">
+                    <div class="card-header-icon bg-pink-100 text-pink-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" /></svg></div>
+                    <div>
+                        <h2 class="text-xl font-bold text-pink-700">4. 의존 구문 분석 (Parsing)</h2>
+                        <p class="text-slate-600 text-sm">단어 간의 관계를 분석하여 문장 구조를 파악합니다.</p>
+                    </div>
+                </div>
+                <div id="parse-output" class="space-y-2"></div>
+            </div>
+            
+            <div id="sentiment-card" class="analysis-card hidden">
+                 <div class="flex items-center mb-4">
+                    <div class="card-header-icon bg-yellow-100 text-yellow-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                    <div>
+                        <h2 class="text-xl font-bold text-yellow-700">5. 감성 분석 (Sentiment Analysis)</h2>
+                        <p class="text-slate-600 text-sm">문장에 담긴 긍정, 부정, 중립적인 감성을 분석합니다.</p>
+                    </div>
+                </div>
+                <div id="sentiment-output" class="flex flex-col items-center justify-center p-4 rounded-lg"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const textInput = document.getElementById('text-input');
+            const analyzeBtn = document.getElementById('analyze-btn');
+            const loader = document.getElementById('loader');
+            const resultCards = {
+                token: document.getElementById('token-card'),
+                pos: document.getElementById('pos-card'),
+                ner: document.getElementById('ner-card'),
+                parse: document.getElementById('parse-card'),
+                sentiment: document.getElementById('sentiment-card'),
+            };
+            const outputs = {
+                token: document.getElementById('token-output'),
+                pos: document.getElementById('pos-output'),
+                ner: document.getElementById('ner-output'),
+                parse: document.getElementById('parse-output'),
+                sentiment: document.getElementById('sentiment-output'),
+            };
+            const posDict = { '나': '대명사', '학교': '명사', '간다': '동사', '삼성전자': '명사', '베트남': '명사', '공장': '명사', '건설했다': '동사', '철수': '명사', '밥': '명사', '먹었다': '동사', '그': '대명사', '회사': '명사', '성장': '명사', '놀랍다': '형용사', '정부': '명사', '정책': '명사', '발표했다': '동사', '영화': '명사', '정말': '부사', '최고': '명사', '멋진': '형용사', '작품이다': '동사', '오늘': '명사', '날씨': '명사', '너무': '부사', '나쁘다': '형용사', '는': '조사', '은': '조사', '이': '조사', '가': '조사', '을': '조사', '를': '조사', '에': '조사', '에서': '조사', '의': '조사', '로': '조사', };
+            const nerDict = { '삼성전자': '기관', '베트남': '장소', '철수': '사람', '정부': '기관' };
+            const particles = ['은', '는', '이', '가', '을', '를', '에', '에서', '에게', '께', '의', '와', '과', '으로', '로'];
+
+            analyzeBtn.addEventListener('click', handleAnalysis);
+            document.querySelectorAll('.example-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    textInput.value = button.textContent;
+                    handleAnalysis();
+                });
+            });
+
+            function handleAnalysis() {
+                const text = textInput.value.trim();
+                if (!text) {
+                    alert('분석할 문장을 입력해주세요.');
+                    return;
+                }
+                Object.values(resultCards).forEach(card => {
+                    card.classList.add('hidden');
+                    card.classList.remove('visible');
+                });
+                loader.classList.remove('hidden');
+                setTimeout(() => {
+                    performAnalysis(text);
+                    loader.classList.add('hidden');
+                }, 1200);
+            }
+
+            function performAnalysis(text) {
+                const tokens = tokenize(text);
+                const taggedTokens = posTag(tokens);
+                const nerResult = recognizeEntities(tokens);
+                const parseResult = simpleParser(taggedTokens);
+                const sentimentResult = analyzeSentiment(tokens);
+                displayTokens(tokens);
+                displayPosTags(taggedTokens);
+                displayNer(nerResult);
+                displayParsing(parseResult);
+                displaySentiment(sentimentResult);
+                let delay = 0;
+                Object.values(resultCards).forEach(card => {
+                    setTimeout(() => {
+                        card.classList.remove('hidden');
+                        setTimeout(() => card.classList.add('visible'), 50);
+                    }, delay);
+                    delay += 250;
+                });
+            }
+
+            function tokenize(text) {
+                const initialTokens = text.replace(/[.,!?]/g, ' $& ').trim().split(/\s+/);
+                const finalTokens = [];
+                initialTokens.forEach(token => {
+                    if (token.length < 2 || /[.,!?]/.test(token)) {
+                        finalTokens.push(token); return;
+                    }
+                    let lastChar = token.slice(-1);
+                    if (particles.includes(lastChar)) {
+                        let rootWord = token.slice(0, -1);
+                        if(rootWord) { finalTokens.push(rootWord, lastChar); return; }
+                    }
+                    finalTokens.push(token);
+                });
+                return finalTokens;
+            }
+            
+            function displayTokens(tokens) {
+                outputs.token.innerHTML = tokens.map(token => `<span class="bg-slate-200 px-3 py-1 rounded-md text-slate-700">${token}</span>`).join('');
+            }
+
+            function posTag(tokens) {
+                return tokens.map(token => ({ token, tag: posDict[token] || '명사' }));
+            }
+            
+            function displayPosTags(taggedTokens) {
+                const tagClasses = { '명사': 'tag-noun', '대명사': 'tag-noun', '부사': 'tag-noun', '동사': 'tag-verb', '형용사': 'tag-adjective', '조사': 'tag-particle', '알수없음': 'tag-unknown' };
+                outputs.pos.innerHTML = taggedTokens.map(({ token, tag }) => `<div class="flex items-center bg-slate-200 rounded-md p-2"><span>${token}</span><span class="tag ${tagClasses[tag] || 'tag-unknown'}">${tag}</span></div>`).join('');
+            }
+
+            function recognizeEntities(tokens) {
+                 const tagClasses = { '기관': 'tag-org', '장소': 'tag-loc', '사람': 'tag-per' };
+                 let resultHtml = '';
+                 tokens.forEach((token, index) => {
+                     const entityType = nerDict[token];
+                     if (entityType) {
+                         resultHtml += `<span class="p-1 rounded-md ${tagClasses[entityType]}">${token} <span class="text-xs opacity-80">[${entityType}]</span></span>`;
+                     } else {
+                         resultHtml += token;
+                     }
+                     if (index < tokens.length - 1 && !/^[.,!?]/.test(tokens[index + 1])) {
+                         resultHtml += ' ';
+                     }
+                 });
+                 return resultHtml;
+            }
+
+            function displayNer(html) {
+                outputs.ner.innerHTML = html;
+            }
+            
+            function simpleParser(taggedTokens) {
+                let subject = 'N/A', object = 'N/A', verb = 'N/A';
+                for (let i = 0; i < taggedTokens.length; i++) {
+                    const { token, tag } = taggedTokens[i];
+                    if (tag === '조사' && (token === '은' || token === '는' || token === '이' || token === '가')) {
+                        if (i > 0) subject = taggedTokens[i-1].token;
+                    }
+                    if (tag === '조사' && (token === '을' || token === '를')) {
+                         if (i > 0) object = taggedTokens[i-1].token;
+                    }
+                    if (tag === '동사' || tag === '형용사') verb = token;
+                }
+                return { subject, object, verb };
+            }
+
+            function displayParsing(result) {
+                outputs.parse.innerHTML = `
+                    <p class="flex items-center"><span class="w-28 font-bold text-slate-500">주어 (Subject)</span> <span class="bg-slate-200 px-3 py-1 rounded-md">${result.subject}</span></p>
+                    <p class="flex items-center"><span class="w-28 font-bold text-slate-500">목적어 (Object)</span> <span class="bg-slate-200 px-3 py-1 rounded-md">${result.object}</span></p>
+                    <p class="flex items-center"><span class="w-28 font-bold text-slate-500">서술어 (Verb)</span> <span class="bg-slate-200 px-3 py-1 rounded-md">${result.verb}</span></p>
+                `;
+            }
+            
+            function analyzeSentiment(tokens) {
+                const positiveWords = ['좋다', '사랑', '행복', '최고', '성공', '아름다운', '놀랍다', '기쁘다', '멋진'];
+                const negativeWords = ['나쁘다', '싫다', '슬픔', '실패', '끔찍한', '화나다', '문제', '최악'];
+                let score = 0;
+                tokens.forEach(token => {
+                    if (positiveWords.some(p => token.includes(p))) score++;
+                    if (negativeWords.some(n => token.includes(n))) score--;
+                });
+
+                const icons = {
+                    positive: '<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+                    negative: '<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+                    neutral: '<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
+                };
+
+                if (score > 0) return { result: '긍정적 (Positive)', color: 'bg-sky-100 text-sky-700', icon: icons.positive };
+                if (score < 0) return { result: '부정적 (Negative)', color: 'bg-red-100 text-red-700', icon: icons.negative };
+                return { result: '중립적 (Neutral)', color: 'bg-slate-200 text-slate-600', icon: icons.neutral };
+            }
+
+            function displaySentiment({ result, color, icon }) {
+                outputs.sentiment.innerHTML = `${icon}<span class="mt-2 text-2xl font-bold">${result}</span>`;
+                outputs.sentiment.className = `flex flex-col items-center justify-center p-4 rounded-lg ${color}`;
+            }
+        });
+    </script>
+</body>
+</html>
+
