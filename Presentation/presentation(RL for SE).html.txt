@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>소프트웨어 공학을 위한 강화 학습에 대한 체계적 문헌 연구</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #e0e0e0;
+            color: #333333;
+            font-size: 16px;
+        }
+        .slide {
+            background-color: #ffffff;
+            padding: 40px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2, h3, h4 {
+            color: #0056b3;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+        }
+        h2 {
+            font-size: 2em;
+        }
+        h3 {
+            font-size: 1.5em;
+        }
+        ul {
+            list-style-type: disc;
+            margin-left: 20px;
+            padding-left: 0;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        .subtitle, .presenter-info, .date {
+            text-align: center;
+            color: #666666;
+            font-size: 1.1em;
+            margin-top: 5px;
+        }
+        .highlight {
+            color: #ff4d4d;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+        code {
+            background-color: #e9e9e9;
+            color: #333333;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .image-placeholder {
+            text-align: center;
+            margin-top: 20px;
+            font-style: italic;
+            color: #999;
+        }
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="slide">
+        <h1>소프트웨어 공학을 위한 강화 학습(RL)에 대한 체계적 문헌 연구</h1>
+        <p class="subtitle">A Survey of RL for Software Engineering</p>
+        <p class="presenter-info">발표자: Dongwang, Hanmo You, Lingwei Zhu, Kaiwei Lin 외 다수</p>
+        <p class="presenter-info">소속: 톈진 대학교, 도쿄 대학교, 오사카 대학교 등</p>
+        <p class="date">발표일: YYYY.MM.DD</p>
+    </div>
+
+    <div class="slide">
+        <h2>서론 - 연구 배경 및 필요성</h2>
+        <h3>1. 강화 학습(RL)의 부상</h3>
+        <ul>
+            <li><strong>강력한 패러다임:</strong> 순차적 의사 결정 문제 해결.</li>
+            <li><strong>관심 급증:</strong> 2015년 <span class="highlight">심층 강화 학습(DRL)</span>의 등장.</li>
+            <li><strong>최신 트렌드:</strong> 대규모 언어 모델(LLM)과의 결합으로 지능형 시스템 구현 기대 증폭.</li>
+        </ul>
+        <h3>2. 소프트웨어 공학(SE)의 도전 과제</h3>
+        <ul>
+            <li><strong>복잡성 증가:</strong> 현대 소프트웨어 시스템의 복잡성.</li>
+            <li><strong>자동화 수요:</strong> 지능형 자동화에 대한 높은 요구.</li>
+        </ul>
+        <h3>3. RL-for-SE 연구의 확산</h3>
+        <ul>
+            <li><strong>전방위적 적용:</strong> 설계, 개발, 품질 보증, 유지보수 등 SE 생명주기 전반에 RL 적용 시도 활발.</li>
+            <li><strong>연구 공백:</strong> 이 분야에 대한 <span class="highlight">체계적이고 종합적인 최신 연구 부재</span>.</li>
+        </ul>
+        <h3>4. 본 연구의 목표</h3>
+        <ul>
+            <li><strong>최초의 매핑 연구:</strong> RL-for-SE 분야에 대한 최초의 <span class="highlight">체계적 매핑 연구(Systematic Mapping Study)</span> 제공.</li>
+            <li><strong>심층 분석:</strong> 2015년 이후 22개 주요 SE 학술지에서 발표된 115개 논문 분석.</li>
+            <li><strong>인사이트 제시:</strong> 연구 동향, 적용 분야, 도전 과제 및 미래 기회 제시.</li>
+        </ul>
+    </div>
+
+    <div class="slide">
+        <h2>강화 학습(RL) 핵심 개념</h2>
+        <h3>1. RL 정의</h3>
+        <ul>
+            <li>에이전트(Agent)가 환경(Environment)과 상호작용하며 <span class="highlight">누적 보상(Reward)을 최대화</span>하는 행동 정책(Policy)을 학습하는 프레임워크.</li>
+            <li><strong>주요 구성 요소:</strong>
+                <ul>
+                    <li><strong>상태 (State):</strong> 에이전트가 인식하는 현재 상황.</li>
+                    <li><strong>행동 (Action):</strong> 상태에 따라 에이전트가 취하는 결정.</li>
+                    <li><strong>보상 (Reward):</strong> 행동의 결과로 주어지는 즉각적인 피드백.</li>
+                    <li><strong>정책 (Policy):</strong> 특정 상태에서 어떤 행동을 할지 결정하는 전략.</li>
+                </ul>
+                <div class="image-placeholder">
+                    
+                </div>
+            </li>
+        </ul>
+        <h3>2. 수학적 모델: 마르코프 결정 과정 (MDP)</h3>
+        <ul>
+            <li><strong>모델 구성:</strong> $M = (S, A, P, R, \gamma)$ 5가지 요소로 구성.</li>
+            <li><strong>최적화 목표:</strong> 누적 보상의 기댓값인 <span class="highlight">가치 함수(Value Function) $Q(s, a)$를 최대화</span>하는 최적 정책 $\pi^*$ 탐색.</li>
+        </ul>
+    </div>
+
+    <div class="slide">
+        <h2>RL 알고리즘의 주요 분류</h2>
+        <h3>1. 밴딧(Bandits) vs. 순차적 의사 결정 (MDP)</h3>
+        <ul>
+            <li><strong>밴딧(MAB):</strong> 상태 변화가 없는 문제. 탐험(Exploration)과 활용(Exploitation)의 균형이 중요.</li>
+            <li><strong>적용 예시:</strong> 퍼징(Fuzzing)의 변이 연산자 선택, 자동 프로그램 복구(APR).</li>
+        </ul>
+        <h3>2. 모델-프리(Model-Free) vs. 모델-기반(Model-Based)</h3>
+        <ul>
+            <li><span class="highlight">모델-프리:</span> 환경의 동작 모델 없이 <span class="highlight">직접 상호작용</span>을 통해 학습. SE 분야에서 <span class="highlight">대부분 채택</span>.</li>
+            <li><strong>모델-기반:</strong> 환경 모델을 학습하여 계획. SE 환경의 복잡성으로 인해 거의 사용되지 않음.</li>
+        </ul>
+        <h3>3. 주요 최적화 전략</h3>
+        <ul>
+            <li><span class="highlight">가치 기반 (Value-based):</span> 행동의 가치(Q-value)를 학습하여 최적 정책 결정. (예: Q-러닝, DQN).</li>
+            <li><span class="highlight">정책 기반 (Policy-based):</span> 정책 함수를 <span class="highlight">직접 최적화</span>. (예: REINFORCE, PPO).</li>
+            <li><span class="highlight">액터-크리틱 (Actor-Critic):</span> 가치와 정책을 함께 학습하여 안정성과 성능 향상. (예: A2C, SAC).</li>
+        </ul>
+    </div>
+
+    <div class="slide">
+        <h2>연구 방법론 (Methodology)</h2>
+        <h3>1. 체계적 문헌 검토 (SLR) 절차</h3>
+        <ul>
+            <li><strong>연구 질문(RQ) 설정:</strong> 5가지 핵심 질문 정의.</li>
+            <li><strong>검색 수행:</strong>
+                <ul>
+                    <li><strong>대상:</strong> 22개 주요 SE 학술지 (컨퍼런스 12, 저널 10).</li>
+                    <li><strong>기간:</strong> 2015년 1월 ~ 2025년 5월.</li>
+                    <li><strong>검색어:</strong> "reinforcement", "Q-learning" 등 RL 관련 핵심 용어.</li>
+                </ul>
+            </li>
+            <li><strong>스크리닝 및 선정:</strong> 초기 169개 논문 중 포함/제외 기준에 따라 <span class="highlight">최종 115개 논문 선정</span>.</li>
+            <li><strong>데이터 추출:</strong> 각 연구 질문에 맞춰 정량적/정성적 데이터 추출 및 분석.</li>
+        </ul>
+    </div>
+    
+    <div class="slide">
+        <h2>(RQ1) RL-for-SE 연구 동향</h2>
+        <h3>1. 연도별 출판 동향</h3>
+        <ul>
+            <li><strong>상승 추세:</strong> 특히 <span class="highlight">2022년 이후 폭발적 증가</span>.</li>
+            <li><strong>최근 동향:</strong> 컨퍼런스 발표 선호 경향 증가 (빠른 전파 주기).</li>
+            <li><strong>주요 학술지:</strong> ASE, ICSE, TSE, TOSEM 등 최상위 학술지에 다수 게재.</li>
+        </ul>
+        <h3>2. 국가별 분포</h3>
+        <ul>
+            <li><strong>연구 주도:</strong> <span class="highlight">중국(41%)</span>이 가장 활발하게 연구 수행.</li>
+            <li><strong>뒤를 잇는 국가:</strong> 미국(16%), 캐나다(12%) 순.</li>
+        </ul>
+        <h3>3. 연구 기여 유형</h3>
+        <ul>
+            <li><span class="highlight">압도적 다수:</span> <span class="highlight">신규 기술/방법론 제안 (88%)</span>.</li>
+            <li><strong>부족한 분야:</strong> 경험적 연구(Empirical study)나 사용자 연구(User study)는 상대적으로 미흡.</li>
+        </ul>
+    </div>
+
+    <div class="slide">
+        <h2>(RQ2) RL이 적용된 SE 활동 및 작업 유형</h2>
+        <h3>1. SE 활동 분포</h3>
+        <ul>
+            <li><span class="highlight">압도적 집중:</span> <span class="highlight">소프트웨어 품질 보증(SQA)에 72%가 집중</span>.</li>
+            <li><strong>1위:</strong> 품질 보증 (83편) - 특히 <span class="highlight">테스트 생성(49편)이 지배적</span>.</li>
+            <li><strong>2위:</strong> 개발 (13편) - 코드 완성, 요약 등.</li>
+            <li><strong>3위:</strong> 유지보수 (12편) - 버그 재현, 코드 리뷰 등.</li>
+            <li><strong>미개척 분야:</strong> 요구사항, 관리, 설계 등은 연구 부족.</li>
+        </ul>
+        <h3>2. SE 작업 유형 분포</h3>
+        <ul>
+            <li><span class="highlight">최대 비중:</span> <span class="highlight">생성(Generation) 작업이 74%</span>.</li>
+            <li><strong>생성:</strong> 테스트 케이스, 코드, 주석 등 소프트웨어 산출물 자동 생성.</li>
+            <li><strong>기타:</strong> 순위 (21편), 분류 (5편), 회귀 (6편) 순으로 적음.</li>
+        </ul>
+    </div>
+
+    <div class="slide">
+        <h2>(RQ3) SE에 적용된 RL 알고리즘</h2>
+        <h3>1. 알고리즘 유형 분포</h3>
+        <ul>
+            <li><span class="highlight">지배적 방식:</span> <span class="highlight">모델-프리(Model-Free) 방식이 대부분</span>.</li>
+            <li><span class="highlight">1위:</span> <span class="highlight">가치 기반 (Value-based, 52%)</span>.
+                <ul>
+                    <li><strong>Q-러닝 (27편):</strong> 구현이 간단하고 블랙박스 환경에 적합.</li>
+                    <li><strong>DQN (22편):</strong> 고차원 상태 공간 처리에 효과적.</li>
+                </ul>
+            </li>
+            <li><strong>2위:</strong> 액터-크리틱 (Actor-Critic, 34%).</li>
+            <li><strong>3위:</strong> 정책 기반 (Policy-based, 32%).</li>
+        </ul>
+        <h3>2. 시간에 따른 변화</h3>
+        <ul>
+            <li><strong>꾸준한 사용:</strong> 가치 기반 방법은 2015년부터 꾸준히 사용.</li>
+            <li><strong>최근 증가:</strong> 정책 기반(2019년~) 및 액터-크리틱(2021년~) 방법 활용 증가.</li>
+        </ul>
+        <h3>3. 최신 동향</h3>
+        <ul>
+            <li>LLM과 결합한 <span class="highlight">RLHF (인간 피드백 기반 강화 학습)</span> 등 고급 기법 등장.</li>
+        </ul>
+    </div>
+
+    <div class="slide">
+        <h2>(RQ4) RL 모델 설계 및 평가 관행</h2>
+        <h3>1. 데이터셋 출처</h3>
+        <ul>
+            <li><strong>주요 출처:</strong> 자체 구축 데이터셋 (39.1%) 및 오픈소스 데이터셋 (36.5%).</li>
+            <li><strong>문제점:</strong> 실제 산업 데이터셋 활용은 7.8%로 저조 → <span class="highlight">학계와 산업계 간 격차</span> 시사.</li>
+        </ul>
+        <h3>2. 모델 설계 및 최적화 전략</h3>
+        <ul>
+            <li><strong>핵심:</strong> 대부분(82.6%)이 RL 핵심 개념 개선보다 <span class="highlight">작업별 최적화</span>에 집중.</li>
+            <li><strong>주요 고려사항:</strong> 상태 표현, 행동 공간 관리, 보상 설계.</li>
+        </ul>
+        <h3>3. 평가 지표 및 재현성</h3>
+        <ul>
+            <li><strong>평가 지표:</strong> 연구의 49%가 <span class="highlight">효과성(Effectiveness)</span>에만 초점.</li>
+            <li><span class="highlight">효율성(Efficiency)</span>을 함께 고려한 연구는 44%에 불과.</li>
+            <li><span class="highlight">재현성 문제:</span> 분석된 논문의 <span class="highlight">41%가 소스 코드를 제공하지 않음</span>.</li>
+        </ul>
+    </div>
+
+    <div class="slide">
+        <h2>(RQ5) 도전 과제 (Challenges)</h2>
+        <ol>
+            <li><span class="highlight">경험적 비교 및 사용자 중심 검증 부족:</span> 여러 RL 알고리즘 간 성능 비교 미흡.</li>
+            <li><span class="highlight">SQA-테스트 생성에 대한 과도한 집중:</span> 다른 SE 활동(요구사항, 설계) 연구 부족.</li>
+            <li><span class="highlight">고급 RL 알고리즘의 미활용:</span> 최신 알고리즘 도입 지연.</li>
+            <li><span class="highlight">데이터 및 재현성 병목 현상:</span> 현실적인 데이터셋 부족, 재현 불가능한 논문 다수.</li>
+            <li><span class="highlight">핵심 RL 개념 혁신보다 작업별 최적화에 치중:</span> 범용적인 RL 방법론 기여 부족.</li>
+            <li><span class="highlight">평가 시 효율성(Efficiency) 고려 미흡:</span> 높은 계산 비용에도 불구하고 효과성 지표에만 집중.</li>
+        </ol>
+    </div>
+
+    <div class="slide">
+        <h2>(RQ5) 기회 및 미래 연구 방향 (Opportunities)</h2>
+        <ol>
+            <li><span class="highlight">경험적 벤치마킹 및 인간 중심 설계:</span> 다양한 알고리즘 비교 및 개발자 피드백 반영.</li>
+            <li><span class="highlight">SE 생애주기 전반으로 RL 적용 범위 확대:</span> 결함 위치 파악, 자동 프로그램 복구 등 미개척 분야 탐색.</li>
+            <li><span class="highlight">LLM과 RL의 유기적 결합:</span> LLM의 언어 능력과 RL의 의사 결정 능력을 결합하여 시너지 창출 (예: <span class="highlight">RLHF</span>).</li>
+            <li><span class="highlight">표준화된 오픈소스 데이터 및 평가 벤치마크 구축:</span> 커뮤니티 차원의 노력 필요.</li>
+            <li><span class="highlight">핵심 RL 아키텍처 혁신을 통한 잠재력 발휘:</span> 일반화 가능한 상태/행동 표현 등 근본적인 RL 혁신 추구.</li>
+            <li><span class="highlight">실용적인 RL 기반 SE 도구 개발 및 산업 평가:</span> 학술적 프로토타입을 넘어 실제 워크플로우에 통합.</li>
+        </ol>
+    </div>
+
+    <div class="slide">
+        <h2>결론 및 요약</h2>
+        <h3>1. 연구 요약</h3>
+        <ul>
+            <li>2015년 이후 115개 RL-for-SE 논문을 체계적으로 분석한 <span class="highlight">최초의 종합 연구</span>.</li>
+        </ul>
+        <h3>2. 주요 발견</h3>
+        <ul>
+            <li>RL-for-SE 연구는 <span class="highlight">2022년 이후 급격히 성장 중</span>.</li>
+            <li><span class="highlight">연구 편중:</span> <span class="highlight">SQA(특히 테스트 생성)</span>에 집중, <span class="highlight">가치 기반 RL 알고리즘</span>이 주로 사용됨.</li>
+            <li><span class="highlight">한계:</span> 데이터 다양성, 효율성 평가, 재현성 측면에서 한계를 보임.</li>
+        </ul>
+        <h3>3. 기여 및 의의</h3>
+        <ul>
+            <li>현재 연구 지형도를 제시하여 연구자와 실무자에게 <span class="highlight">가이드라인 제공</span>.</li>
+            <li>미래 연구를 위한 6가지 핵심 <span class="highlight">도전 과제</span>와 6가지 <span class="highlight">기회</span> 제시.</li>
+        </ul>
+        <h3>Q&A</h3>
+    </div>
+
+</body>
+</html>
