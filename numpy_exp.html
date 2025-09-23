@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ko" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive NumPy Core Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        .code-block {
+            background-color: #282c34;
+            color: #abb2bf;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: 'D2Coding', 'Fira Code', monospace;
+            font-size: 0.9em;
+        }
+        .code-block-container {
+            position: relative;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background-color: #4a5568;
+            color: white;
+            border: none;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background-color 0.2s;
+        }
+        .copy-btn:hover {
+            background-color: #2d3748;
+        }
+        .active-nav {
+            color: #3b82f6;
+            font-weight: 700;
+            background-color: #eff6ff;
+            border-left-color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+    <!-- Chosen Palette: Warm Neutrals & Blue Accent -->
+    <!-- Application Structure Plan: A two-column layout with a sticky sidebar for navigation and a main content area. This structure was chosen because a reference guide benefits immensely from non-linear access. Users can immediately jump to any function category (e.g., "Random Sampling") without scrolling, making it far more efficient than a linear document. The sidebar highlights the current section for better spatial awareness. -->
+    <!-- Visualization & Content Choices: The primary "visualization" is the code itself. Goal: Usability -> Presentation: Formatted code blocks -> Interaction: A 'Copy Code' button for each block. Justification: This directly serves the user's need to quickly use the examples. The axis diagram from the source is replaced with a pure HTML/CSS representation to avoid external images/SVG and provide a clearer, integrated explanation. No charts are needed as there is no quantitative data to plot. Library/Method: Vanilla JS for all interactions. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    
+    <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="mb-10 text-center">
+            <h1 class="text-4xl font-bold text-slate-900">NumPy 핵심 기능 가이드</h1>
+            <p class="mt-2 text-lg text-slate-600">대화형 예제와 함께 배우는 NumPy</p>
+        </header>
+
+        <div class="flex flex-col lg:flex-row gap-8">
+            <aside class="lg:w-1/4 lg:sticky lg:top-8 self-start">
+                <nav class="bg-white rounded-lg shadow-sm p-4">
+                    <h3 class="text-lg font-bold mb-4 text-slate-900">탐색 메뉴</h3>
+                    <ul id="navigation-menu" class="space-y-2">
+                        <li><a href="#section-1" class="block px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-md border-l-4 border-transparent">1. 배열 생성</a></li>
+                        <li><a href="#section-2" class="block px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-md border-l-4 border-transparent">2. 생성 및 초기화 함수</a></li>
+                        <li><a href="#section-3" class="block px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-md border-l-4 border-transparent">3. 랜덤 샘플링</a></li>
+                        <li><a href="#section-4" class="block px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-md border-l-4 border-transparent">4. 배열 연산</a></li>
+                        <li><a href="#section-5" class="block px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-md border-l-4 border-transparent">5. 배열 결합</a></li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <main class="lg:w-3/4 space-y-12">
+                <section id="section-1" class="scroll-mt-24 bg-white p-6 rounded-lg shadow-sm">
+                    <h2 class="text-3xl font-bold mb-4 text-slate-900">1. NumPy 배열 생성 (Array Creation)</h2>
+                    <p class="mb-6">NumPy의 핵심은 `ndarray` 객체입니다. Python 리스트보다 월등히 빠른 속도를 제공하며, 벡터, 매트릭스, 텐서 등 다차원 데이터를 효율적으로 다룰 수 있습니다.</p>
+                    <div class="code-block-container">
+                        <button class="copy-btn">복사</button>
+                        <pre class="code-block"><code>import numpy as np
+
+# 예시 1: 정수형 벡터 생성
+test_array = np.array([1, 4, 5, 8])
+print(f"1. 벡터: {test_array}")
+print(f"   - Shape: {test_array.shape}, Dtype: {test_array.dtype}, Ndim: {test_array.ndim}, Size: {test_array.size}\n")
+
+# 예시 2: 실수형(float) 2x3 매트릭스 생성
+matrix = np.array([[1, 2, 3], [4, 5, 6]], dtype=float)
+print(f"2. 매트릭스: \n{matrix}")
+print(f"   - Shape: {matrix.shape}, Dtype: {matrix.dtype}, Ndim: {matrix.ndim}, Size: {matrix.size}\n")
+
+# 예시 3: 3차원 텐서(Tensor) 생성
+tensor = np.array([[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]])
+print(f"3. 텐서: \n{tensor}")
+print(f"   - Shape: {tensor.shape}, Dtype: {tensor.dtype}, Ndim: {tensor.ndim}, Size: {tensor.size}\n")
+
+# 예시 4: reshape()를 이용한 형태 변경
+a = np.array([1, 2, 3, 4, 5, 6, 7, 8])
+reshaped_a = a.reshape(2, 4)
+print(f"4. Reshaped 배열 (2, 4): \n{reshaped_a}\n")
+
+# 예시 5: 인덱싱과 슬라이싱
+print(f"5. 인덱싱 matrix[1, 2]: {matrix[1, 2]}")
+print(f"   슬라이싱 matrix[0, :]: {matrix[0, :]}")
+print(f"   슬라이싱 matrix[:, 1]: {matrix[:, 1]}\n")</code></pre>
+                    </div>
+                </section>
+                
+                <section id="section-2" class="scroll-mt-24 bg-white p-6 rounded-lg shadow-sm">
+                    <h2 class="text-3xl font-bold mb-4 text-slate-900">2. 배열 생성 및 초기화 함수</h2>
+                    <p class="mb-6">특정 값이나 패턴을 가진 배열을 손쉽게 생성하는 함수들입니다. 딥러닝 모델의 가중치 초기화 등에 매우 유용하게 사용됩니다.</p>
+                    <div class="code-block-container">
+                        <button class="copy-btn">복사</button>
+                        <pre class="code-block"><code>import numpy as np
+
+# --- .arange() 예시 ---
+print(f"1. arange(10): {np.arange(10)}")
+print(f"   arange(0, 5, 0.5): {np.arange(0, 5, 0.5)}\n")
+
+# --- .zeros(), .ones(), .empty() 예시 ---
+zeros_arr = np.zeros(shape=(2, 3), dtype=int)
+print(f"2. zeros((2, 3)):\n{zeros_arr}\n")
+
+ones_arr = np.ones((2, 3))
+print(f"3. ones((2, 3)):\n{ones_arr}\n")
+
+empty_arr = np.empty((2, 3))
+print(f"4. empty((2, 3)):\n{empty_arr}\n")
+
+# --- .something_like() 예시 ---
+base_arr = np.array([[1, 2, 3], [4, 5, 6]])
+ones_like_arr = np.ones_like(base_arr)
+print(f"5. 원본 배열:\n{base_arr}")
+print(f"   ones_like:\n{ones_like_arr}\n")
+
+# --- .identity() 예시 ---
+identity_mat = np.identity(3)
+print(f"6. identity(3):\n{identity_mat}\n")
+
+# --- .eye() 예시 ---
+eye_mat = np.eye(3, 5, k=1)
+print(f"7. eye(3, 5, k=1):\n{eye_mat}\n")
+
+# --- .diag() 예시 ---
+diag_vec = np.arange(4)
+diag_mat_from_vec = np.diag(diag_vec)
+print(f"8. 1D 배열로 대각 행렬 생성:\n{diag_mat_from_vec}")
+vec_from_diag_mat = np.diag(diag_mat_from_vec)
+print(f"   2D 행렬에서 대각 원소 추출: {vec_from_diag_mat}\n")</code></pre>
+                    </div>
+                </section>
+
+                <section id="section-3" class="scroll-mt-24 bg-white p-6 rounded-lg shadow-sm">
+                    <h2 class="text-3xl font-bold mb-4 text-slate-900">3. 랜덤 샘플링 (Random Sampling)</h2>
+                    <p class="mb-6">다양한 확률 분포로부터 데이터를 샘플링하는 기능을 제공합니다. 머신러닝에서 데이터 증강이나 가중치 초기화에 필수적입니다.</p>
+                     <div class="code-block-container">
+                        <button class="copy-btn">복사</button>
+                        <pre class="code-block"><code>import numpy as np
+np.random.seed(42)
+
+# 예시 1: 0과 1 사이의 균등 분포에서 5개 샘플링
+uniform_sample1 = np.random.uniform(size=5)
+print(f"1. uniform(size=5): {uniform_sample1}\n")
+
+# 예시 2: 10과 20 사이의 균등 분포에서 2x3 매트릭스 샘플링
+uniform_sample2 = np.random.uniform(low=10, high=20, size=(2, 3))
+print(f"2. uniform(10, 20, size=(2,3)):\n{uniform_sample2}\n")
+
+# 예시 3: 표준 정규 분포에서 5개 샘플링
+normal_sample1 = np.random.normal(size=5)
+print(f"3. normal(size=5): {normal_sample1}\n")
+
+# 예시 4: 평균 100, 표준편차 15인 정규 분포에서 샘플링
+normal_sample2 = np.random.normal(loc=100, scale=15, size=(2, 4))
+print(f"4. normal(loc=100, scale=15, size=(2,4)):\n{normal_sample2}\n")
+
+# 예시 5: 분포별 데이터 평균/표준편차 비교
+data_u = np.random.uniform(0, 10, 10000)
+print(f"5. 균등분포(0~10) 평균: {data_u.mean():.2f}, 표편: {data_u.std():.2f}")
+data_n = np.random.normal(5, 2, 10000)
+print(f"   정규분포(평균5,표편2) 평균: {data_n.mean():.2f}, 표편: {data_n.std():.2f}\n")</code></pre>
+                    </div>
+                </section>
+
+                <section id="section-4" class="scroll-mt-24 bg-white p-6 rounded-lg shadow-sm">
+                    <h2 class="text-3xl font-bold mb-4 text-slate-900">4. 배열 연산 및 수학 함수</h2>
+                    <p class="mb-6">NumPy의 핵심 장점인 벡터화(Vectorization) 연산입니다. `for` 루프 없이 배열 전체에 대해 빠르고 효율적인 연산을 수행합니다. 연산의 기준이 되는 축(axis)을 이해하는 것이 중요합니다.</p>
+                    
+                    <div class="my-6 p-4 border rounded-lg bg-slate-50">
+                        <h4 class="font-bold text-lg mb-2">Axis 개념 시각화</h4>
+                        <div class="flex gap-4 items-center justify-center text-center">
+                            <div class="font-mono text-sm">
+                                <p class="mb-2">arr = [[1,2,3], [4,5,6]]</p>
+                                <div class="inline-block border p-2 rounded bg-white">
+                                    <div class="flex gap-2">
+                                        <div class="p-2 border bg-sky-100">1</div><div class="p-2 border bg-sky-100">2</div><div class="p-2 border bg-sky-100">3</div>
+                                    </div>
+                                     <div class="flex gap-2 mt-1">
+                                        <div class="p-2 border bg-blue-100">4</div><div class="p-2 border bg-blue-100">5</div><div class="p-2 border bg-blue-100">6</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-2xl font-thin text-slate-400">&rarr;</div>
+                            <div>
+                                <p class="font-semibold mb-2">axis=0 (열 기준 연산)</p>
+                                <div class="flex items-center gap-2">
+                                    <div class="border p-2 rounded bg-amber-100">[1+4, 2+5, 3+6]</div>
+                                </div>
+                                <p class="font-semibold mt-4 mb-2">axis=1 (행 기준 연산)</p>
+                                <div class="flex flex-col gap-2">
+                                     <div class="border p-2 rounded bg-teal-100">[1+2+3]</div>
+                                     <div class="border p-2 rounded bg-teal-100">[4+5+6]</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                     <div class="code-block-container">
+                        <button class="copy-btn">복사</button>
+                        <pre class="code-block"><code>import numpy as np
+
+arr = np.arange(1, 10).reshape(3, 3)
+print(f"원본 배열:\n{arr}\n")
+
+# 예시 1: 전체 합, 평균, 표준편차
+print(f"1. 전체 합: {arr.sum()}")
+print(f"   전체 평균: {arr.mean():.2f}\n")
+
+# 예시 2: axis=0 (열 기준) 연산
+print(f"2. 각 열의 합 (axis=0): {arr.sum(axis=0)}\n")
+
+# 예시 3: axis=1 (행 기준) 연산
+print(f"3. 각 행의 합 (axis=1): {arr.sum(axis=1)}\n")
+
+# 예시 4: 수학 함수 (element-wise)
+print(f"4. 제곱근 (sqrt):\n{np.sqrt(arr)}\n")
+
+# 예시 5: 벡터화 연산 (for 루프 X)
+a = np.array([1, 2, 3])
+b = np.array([4, 5, 6])
+print(f"5. 벡터화 덧셈 a + b: {a + b}")
+print(f"   벡터화 곱셈 a * b: {a * b}")</code></pre>
+                    </div>
+                </section>
+                
+                <section id="section-5" class="scroll-mt-24 bg-white p-6 rounded-lg shadow-sm">
+                    <h2 class="text-3xl font-bold mb-4 text-slate-900">5. 배열 결합 (Concatenation)</h2>
+                    <p class="mb-6">여러 배열을 하나로 합치는 기능입니다. 데이터를 합치거나 특징(feature)을 결합할 때 자주 사용됩니다. 결합하려는 축 이외의 shape이 동일해야 합니다.</p>
+                     <div class="code-block-container">
+                        <button class="copy-btn">복사</button>
+                        <pre class="code-block"><code>import numpy as np
+
+a = np.array([[1, 2], [3, 4]])
+b = np.array([[5, 6]])
+c = np.array([[50], [60]])
+
+# 예시 1: vstack (수직 결합)
+v_stacked = np.vstack((a, b))
+print(f"1. vstack 결과 (shape: {v_stacked.shape}):\n{v_stacked}\n")
+
+# 예시 2: hstack (수평 결합)
+h_stacked = np.hstack((a, c))
+print(f"2. hstack 결과 (shape: {h_stacked.shape}):\n{h_stacked}\n")
+
+# 예시 3: concatenate (axis=0) - vstack과 동일
+concat_0 = np.concatenate((a, b), axis=0)
+print(f"3. concatenate(axis=0):\n{concat_0}\n")
+
+# 예시 4: concatenate (axis=1) - hstack과 동일
+concat_1 = np.concatenate((a, c), axis=1)
+print(f"4. concatenate(axis=1):\n{concat_1}\n")
+
+# 예시 5: 3개 이상의 배열 결합
+d = np.array([[7, 8]])
+e = np.array([[9, 10]])
+multi_vstack = np.vstack((b, d, e))
+print(f"5. 3개 배열 vstack:\n{multi_vstack}\n")</code></pre>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const sections = document.querySelectorAll('main section');
+            const navLinks = document.querySelectorAll('#navigation-menu a');
+            const copyButtons = document.querySelectorAll('.copy-btn');
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('active-nav');
+                            if (link.getAttribute('href').substring(1) === entry.target.id) {
+                                link.classList.add('active-nav');
+                            }
+                        });
+                    }
+                });
+            }, { rootMargin: '-50% 0px -50% 0px', threshold: 0 });
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+
+            copyButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const codeBlock = button.nextElementSibling.querySelector('code');
+                    const codeText = codeBlock.innerText;
+                    
+                    try {
+                        navigator.clipboard.writeText(codeText).then(() => {
+                            button.textContent = '복사 완료!';
+                            setTimeout(() => {
+                                button.textContent = '복사';
+                            }, 2000);
+                        });
+                    } catch (err) {
+                        const textArea = document.createElement('textarea');
+                        textArea.value = codeText;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        try {
+                            document.execCommand('copy');
+                            button.textContent = '복사 완료!';
+                            setTimeout(() => {
+                                button.textContent = '복사';
+                            }, 2000);
+                        } catch (e) {
+                            console.error('Copy failed', e);
+                            button.textContent = '복사 실패';
+                        }
+                        document.body.removeChild(textArea);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
