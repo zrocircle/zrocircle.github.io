@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>TestPlan Genius - 요구사항 기반 테스트 플랜 자동 생성 (HTML 버전)</title>
+  <!-- Bootstrap 5 CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <!-- html2pdf.js for HTML -> PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    body {
+      background-color: #f4f6fb;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .tp-sidebar {
+      background: #0b1f3b;
+      color: #fff;
+      min-height: 100vh;
+    }
+    .tp-logo {
+      font-weight: 700;
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .tp-step-item {
+      padding: 0.4rem 0.2rem;
+      opacity: 0.7;
+      border-left: 3px solid transparent;
+      cursor: pointer;
+    }
+    .tp-step-item.active {
+      opacity: 1;
+      border-left-color: #1abc9c;
+      padding-left: 0.5rem;
+      font-weight: 600;
+    }
+    .tp-card {
+      background: #ffffff;
+      border-radius: 0.75rem;
+      padding: 1rem 1.3rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+    }
+    .chip {
+      border-radius: 999px;
+      border: 1px solid #dee2e6;
+      background: #f8f9fa;
+      padding: 0.15rem 0.75rem;
+      font-size: 0.8rem;
+      margin-right: 0.25rem;
+      margin-bottom: 0.25rem;
+      cursor: pointer;
+    }
+    .chip-active {
+      background: #1abc9c;
+      color: white;
+      border-color: #1abc9c;
+    }
+
+    /* 문서 영역 스타일 (HTML 출력용) */
+    .tp-doc {
+      background: #ffffff;
+      padding: 24px 32px;
+      border-radius: 0.75rem;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+      color: #111827;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    .tp-doc h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+    .tp-doc h2 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-top: 1.5rem;
+      margin-bottom: 0.5rem;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 0.25rem;
+    }
+    .tp-doc h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-top: 1rem;
+      margin-bottom: 0.35rem;
+    }
+    .tp-doc small {
+      color: #6b7280;
+    }
+    .tp-doc .meta {
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+    .tp-doc table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.5rem 0 1rem 0;
+      font-size: 0.9rem;
+    }
+    .tp-doc table th,
+    .tp-doc table td {
+      border: 1px solid #e5e7eb;
+      padding: 0.35rem 0.5rem;
+      vertical-align: top;
+    }
+    .tp-doc table th {
+      background: #f9fafb;
+      font-weight: 600;
+      text-align: left;
+    }
+    .tp-doc ul {
+      margin-bottom: 0.5rem;
+    }
+    .tp-doc-section-number {
+      font-weight: 700;
+      margin-right: 0.15rem;
+    }
+
+    /* PDF용 숨겨진 영역 (Export 시 사용) */
+    #planExportWrapper {
+      position: fixed;
+      left: -9999px;
+      top: -9999px;
+      width: 210mm;
+      /* PDF A4 폭 기준 */
+    }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <!-- 사이드바 -->
+      <div class="col-12 col-md-3 col-lg-2 tp-sidebar p-3">
+        <div class="tp-logo">TestPlan Genius</div>
+        <div class="small mb-3">요구사항 기반 테스트 플랜 자동 생성 (HTML)</div>
+        <div id="step1Nav" class="tp-step-item active" onclick="goToStep(1)">
+          1. Project & Requirements
+        </div>
+        <div id="step2Nav" class="tp-step-item" onclick="goToStep(2)">
+          2. Strategy
+        </div>
+        <div id="step3Nav" class="tp-step-item" onclick="goToStep(3)">
+          3. Generate & Preview
+        </div>
+        <div id="step4Nav" class="tp-step-item" onclick="goToStep(4)">
+          4. Export
+        </div>
+      </div>
+
+      <!-- 메인 영역 -->
+      <div class="col-12 col-md-9 col-lg-10 p-4">
+        <header class="mb-3">
+          <h2 class="mb-0">TestPlan Genius (HTML & PDF)</h2>
+          <p class="text-muted mb-0">
+            요구사항과 테스트 전략을 입력하면 HTML 기반 테스트 플랜 문서를 생성하고, 그대로 PDF로 다운로드합니다.
+          </p>
+        </header>
+
+        <!-- Step 1 -->
+        <section id="step1" class="step-section">
+          <div class="tp-card">
+            <h4 class="mb-3">Step 1. 프로젝트 기본 정보</h4>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">프로젝트 이름</label>
+                <input id="projectName" type="text" class="form-control" placeholder="예: 온라인 쇼핑몰" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">버전</label>
+                <input id="projectVersion" type="text" class="form-control" value="1.0" />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">테스트 리더</label>
+                <input id="testLeader" type="text" class="form-control" placeholder="홍길동" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">스폰서/고객</label>
+                <input id="sponsor" type="text" class="form-control" placeholder="고객사 이름" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">릴리즈 목표일</label>
+                <input id="releaseDate" type="date" class="form-control" />
+              </div>
+              <div class="col-md-4"></div>
+              <div class="col-md-4">
+                <label class="form-label">테스트 시작일</label>
+                <input id="testStartDate" type="date" class="form-control" />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">테스트 종료일</label>
+                <input id="testEndDate" type="date" class="form-control" />
+              </div>
+            </div>
+          </div>
+
+          <div class="tp-card">
+            <h4 class="mb-3">Step 1. 요구사항 입력</h4>
+            <p class="small text-muted mb-2">
+              FR/NFR, 우선순위, 테스트 타입 태그를 간단히 입력하세요.
+            </p>
+            <div class="table-responsive">
+              <table class="table align-middle table-sm">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width: 10%">ID</th>
+                    <th style="width: 10%">유형</th>
+                    <th style="width: 40%">설명</th>
+                    <th style="width: 15%">우선순위</th>
+                    <th style="width: 20%">테스트 타입 태그</th>
+                    <th style="width: 5%"></th>
+                  </tr>
+                </thead>
+                <tbody id="requirementsBody">
+                  <!-- 기본 한 줄은 JS에서 추가 -->
+                </tbody>
+              </table>
+            </div>
+            <button class="btn btn-outline-secondary btn-sm" onclick="addRequirementRow()">
+              + 요구사항 행 추가
+            </button>
+          </div>
+
+          <div class="d-flex justify-content-end">
+            <button class="btn btn-success" onclick="goToStep(2)">다음 단계로</button>
+          </div>
+        </section>
+
+        <!-- Step 2 -->
+        <section id="step2" class="step-section d-none">
+          <div class="tp-card">
+            <h4 class="mb-3">Step 2. 테스트 전략 설정</h4>
+            <div class="mb-3">
+              <label class="form-label">테스트 레벨</label>
+              <div id="levelChips"></div>
+              <div class="form-text">Unit / Integration / System / Acceptance 중 선택</div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">테스트 유형</label>
+              <div id="typeChips"></div>
+              <div class="form-text">Function / Regression / Performance / Security / Usability</div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">자동화 비율: <span id="automationLabel">30%</span></label>
+              <input
+                id="automationRate"
+                type="range"
+                class="form-range"
+                min="0"
+                max="100"
+                value="30"
+                oninput="document.getElementById('automationLabel').innerText=this.value+'%'"
+              />
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">사용 도구 (콤마로 구분)</label>
+              <input
+                id="tools"
+                type="text"
+                class="form-control"
+                placeholder="예: JUnit, Cypress, JMeter"
+              />
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <button class="btn btn-outline-secondary" onclick="goToStep(1)">이전</button>
+            <button class="btn btn-success" onclick="goToStep(3)">다음 단계로</button>
+          </div>
+        </section>
+
+        <!-- Step 3 -->
+        <section id="step3" class="step-section d-none">
+          <div class="tp-card mb-3">
+            <h4 class="mb-3">Step 3. 플랜 생성 및 미리보기</h4>
+            <p class="small text-muted mb-2">
+              지금까지 입력한 내용을 바탕으로 HTML 테스트 플랜 문서를 생성합니다.
+            </p>
+            <button class="btn btn-primary mb-3" onclick="generatePlan()">
+              Generate Test Plan (HTML)
+            </button>
+          </div>
+
+          <div id="previewWrapper" class="tp-card d-none">
+            <h5 class="mb-3">미리보기</h5>
+            <div id="planPreview" class="tp-doc"></div>
+          </div>
+
+          <div class="d-flex justify-content-between mt-3">
+            <button class="btn btn-outline-secondary" onclick="goToStep(2)">이전</button>
+            <button class="btn btn-success" onclick="goToStep(4)">Export 단계로</button>
+          </div>
+        </section>
+
+        <!-- Step 4 -->
+        <section id="step4" class="step-section d-none">
+          <div class="tp-card mb-3">
+            <h4 class="mb-3">Step 4. Export</h4>
+            <p class="small text-muted">
+              아래 HTML 문서를 그대로 PDF로 저장할 수 있습니다.
+            </p>
+          </div>
+          <div class="tp-card">
+            <div id="planPreviewExport" class="tp-doc"></div>
+          </div>
+          <div class="d-flex gap-2 mt-3">
+            <button class="btn btn-outline-secondary" onclick="goToStep(3)">
+              미리보기로 돌아가기
+            </button>
+            <button class="btn btn-outline-dark" onclick="downloadPDF()">
+              PDF 다운로드
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF용 숨겨진 영역 -->
+  <div id="planExportWrapper">
+    <div id="planExport" class="tp-doc"></div>
+  </div>
+
+  <!-- Bootstrap JS (옵션) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // ---------- Step 전환 ----------
+    function goToStep(step) {
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById("step" + i).classList.add("d-none");
+        document.getElementById("step" + i + "Nav").classList.remove("active");
+      }
+      document.getElementById("step" + step).classList.remove("d-none");
+      document.getElementById("step" + step + "Nav").classList.add("active");
+
+      // Export 단계로 갈 때 현재 HTML 동기화
+      if (step === 4) {
+        const html = document.getElementById("planPreview").innerHTML;
+        document.getElementById("planPreviewExport").innerHTML = html;
+        document.getElementById("planExport").innerHTML = html; // PDF용 숨김 영역
+      }
+    }
+
+    // ---------- 요구사항 행 관리 ----------
+    function addRequirementRow(defaultData) {
+      const tbody = document.getElementById("requirementsBody");
+      const row = document.createElement("tr");
+
+      const idx = tbody.rows.length + 1;
+      const reqId = defaultData?.reqId || "FR-00" + idx;
+      const type = defaultData?.type || "FR";
+      const desc = defaultData?.description || "";
+      const priority = defaultData?.priority || "High";
+      const tags = (defaultData?.tags || []).join(", ");
+
+      row.innerHTML = `
+        <td><input class="form-control form-control-sm req-id" value="${reqId}" /></td>
+        <td>
+          <select class="form-select form-select-sm req-type">
+            <option value="FR" ${type === "FR" ? "selected" : ""}>FR</option>
+            <option value="NFR" ${type === "NFR" ? "selected" : ""}>NFR</option>
+          </select>
+        </td>
+        <td><input class="form-control form-control-sm req-desc" value="${desc}" placeholder="예: 로그인 기능, 응답시간 3초 이내 등" /></td>
+        <td>
+          <select class="form-select form-select-sm req-priority">
+            <option value="High" ${priority === "High" ? "selected" : ""}>High</option>
+            <option value="Medium" ${priority === "Medium" ? "selected" : ""}>Medium</option>
+            <option value="Low" ${priority === "Low" ? "selected" : ""}>Low</option>
+          </select>
+        </td>
+        <td>
+          <input class="form-control form-control-sm req-tags" value="${tags}" placeholder="기능, 보안, 성능 등" />
+        </td>
+        <td>
+          <button class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove()">X</button>
+        </td>
+      `;
+
+      tbody.appendChild(row);
+    }
+
+    // ---------- 전략 chips ----------
+    const LEVELS = ["Unit", "Integration", "System", "Acceptance"];
+    const TYPES = ["Function", "Regression", "Performance", "Security", "Usability"];
+
+    function createChips() {
+      const levelContainer = document.getElementById("levelChips");
+      LEVELS.forEach((lvl) => {
+        const span = document.createElement("span");
+        span.className = "chip";
+        span.innerText = lvl;
+        span.onclick = function () {
+          span.classList.toggle("chip-active");
+        };
+        levelContainer.appendChild(span);
+      });
+
+      const typeContainer = document.getElementById("typeChips");
+      TYPES.forEach((t) => {
+        const span = document.createElement("span");
+        span.className = "chip";
+        span.innerText = t;
+        span.onclick = function () {
+          span.classList.toggle("chip-active");
+        };
+        typeContainer.appendChild(span);
+      });
+    }
+
+    // ---------- 데이터 수집 ----------
+    function getProjectData() {
+      return {
+        name: document.getElementById("projectName").value || "Untitled Project",
+        version: document.getElementById("projectVersion").value || "1.0",
+        testLeader: document.getElementById("testLeader").value || "",
+        sponsor: document.getElementById("sponsor").value || "",
+        releaseDate: document.getElementById("releaseDate").value || "",
+        testStartDate: document.getElementById("testStartDate").value || "",
+        testEndDate: document.getElementById("testEndDate").value || "",
+      };
+    }
+
+    function getRequirements() {
+      const rows = document.querySelectorAll("#requirementsBody tr");
+      const list = [];
+      rows.forEach((row) => {
+        const reqId = row.querySelector(".req-id").value.trim();
+        const type = row.querySelector(".req-type").value;
+        const desc = row.querySelector(".req-desc").value.trim();
+        const priority = row.querySelector(".req-priority").value;
+        const tags = row
+          .querySelector(".req-tags")
+          .value.split(",")
+          .map((t) => t.trim())
+          .filter(Boolean);
+        if (reqId || desc) {
+          list.push({ reqId, type, description: desc, priority, tags });
+        }
+      });
+      return list;
+    }
+
+    function getStrategy() {
+      const levels = [];
+      document.querySelectorAll("#levelChips .chip-active").forEach((el) => {
+        levels.push(el.innerText);
+      });
+      const types = [];
+      document.querySelectorAll("#typeChips .chip-active").forEach((el) => {
+        types.push(el.innerText);
+      });
+      const automationRate = Number(document.getElementById("automationRate").value) || 0;
+      const tools = document
+        .getElementById("tools")
+        .value.split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+
+      return { levels, types, automationRate, tools };
+    }
+
+    // ---------- HTML 문서 생성 ----------
+    function generateTestPlanHTML(project, requirements, strategy) {
+      const {
+        name,
+        version,
+        testLeader,
+        sponsor,
+        releaseDate,
+        testStartDate,
+        testEndDate,
+      } = project;
+
+      const createdDate = new Date().toISOString().slice(0, 10);
+      const levels = (strategy.levels || []).join(", ") || "N/A";
+      const types = (strategy.types || []).join(", ") || "N/A";
+      const automationRate = strategy.automationRate ?? 0;
+      const tools = (strategy.tools || []).join(", ") || "-";
+
+      const rtmRows =
+        requirements.length > 0
+          ? requirements
+              .map((r) => {
+                const typeTags = r.tags && r.tags.length > 0 ? r.tags.join(", ") : "";
+                return `
+                <tr>
+                  <td>${r.reqId}</td>
+                  <td>${r.description}</td>
+                  <td>${r.priority || ""}</td>
+                  <td>${typeTags}</td>
+                </tr>`;
+              })
+              .join("")
+          : `
+          <tr>
+            <td colspan="4">정의된 요구사항이 없습니다.</td>
+          </tr>`;
+
+      return `
+        <div>
+          <h1>📄 ${name} - 테스트 플랜 (Test Plan)</h1>
+          <div class="meta">
+            <div><strong>문서 버전:</strong> ${version}</div>
+            <div><strong>작성일:</strong> ${createdDate}</div>
+            <div><strong>작성자:</strong> ${testLeader || "-"}</div>
+            <div><strong>스폰서/고객:</strong> ${sponsor || "-"}</div>
+          </div>
+
+          <h2><span class="tp-doc-section-number">1.</span> 개요 (Introduction)</h2>
+          <p>
+            이 문서는 <strong>${name}</strong> 프로젝트의 소프트웨어 품질 보증을 위한 테스트 활동을 정의한다.
+          </p>
+          <h3>1.1 테스트 목표</h3>
+          <ul>
+            <li>핵심 기능적 요구사항이 정상적으로 동작하는지 검증한다.</li>
+            <li>주요 비기능 요구사항(성능, 보안 등)을 검증한다.</li>
+            <li>릴리즈 전 잠재적인 결함과 위험을 최소화한다.</li>
+          </ul>
+          <h3>1.2 테스트 범위 (Scope)</h3>
+          <ul>
+            <li><strong>포함 대상:</strong> 요구사항 명세서에 정의된 주요 기능 모듈 및 서비스.</li>
+            <li><strong>제외 대상:</strong> 현재 릴리즈 범위에서 제외된 기능 또는 우선순위가 낮은 항목.</li>
+          </ul>
+
+          <h2><span class="tp-doc-section-number">2.</span> 테스트 전략 및 접근 방식 (Strategy)</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>구분</th>
+                <th>적용 여부</th>
+                <th>설명</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>테스트 레벨</td>
+                <td>${levels}</td>
+                <td>선택된 테스트 레벨을 중심으로 단계별로 테스트를 수행한다.</td>
+              </tr>
+              <tr>
+                <td>핵심 테스트 유형</td>
+                <td>${types}</td>
+                <td>기능 회귀 및 핵심 비기능 요구사항에 대한 검증을 수행한다.</td>
+              </tr>
+              <tr>
+                <td>자동화 목표</td>
+                <td>${automationRate}%</td>
+                <td>자동화 테스트를 통해 반복 작업을 최소화하고 회귀 검증 효율을 높인다.</td>
+              </tr>
+            </tbody>
+          </table>
+          <p><strong>사용할 주요 테스트 도구:</strong> ${tools}</p>
+
+          <h2><span class="tp-doc-section-number">3.</span> 테스트 항목 (Items to be Tested)</h2>
+          <p><strong>요구사항 추적성 매트릭스 (RTM) 요약</strong></p>
+          <table>
+            <thead>
+              <tr>
+                <th>요구사항 ID</th>
+                <th>기능/설명</th>
+                <th>우선순위</th>
+                <th>테스트 타입</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rtmRows}
+            </tbody>
+          </table>
+
+          <h2><span class="tp-doc-section-number">4.</span> 테스트 환경 (Environment)</h2>
+          <ul>
+            <li><strong>하드웨어 구성:</strong> 서버 및 클라이언트 환경은 프로젝트 인프라 설계 문서를 따른다.</li>
+            <li><strong>소프트웨어 구성:</strong> 운영체제, DBMS, 웹 서버 및 미들웨어 버전은 시스템 아키텍처 문서에 명시된 구성을 따른다.</li>
+            <li><strong>테스트 데이터:</strong> 대표 시나리오를 충분히 커버할 수 있도록 익명 처리된 실제 데이터 샘플과 테스트 전용 데이터를 함께 사용한다.</li>
+          </ul>
+
+          <h2><span class="tp-doc-section-number">5.</span> 일정 및 자원 계획 (Schedule & Resources)</h2>
+          <ul>
+            <li><strong>릴리즈 목표일:</strong> ${releaseDate || "-"}</li>
+            <li><strong>테스트 시작일:</strong> ${testStartDate || "-"}</li>
+            <li><strong>테스트 종료일:</strong> ${testEndDate || "-"}</li>
+          </ul>
+          <p>
+            테스트는 단위 테스트(Unit), 통합 테스트(Integration), 시스템 테스트(System), 인수 테스트(Acceptance)의
+            단계를 기준으로 계획되며, 각 단계별 완료 기준과 마일스톤을 별도 일정표로 관리한다.
+          </p>
+          <p>
+            QA 엔지니어, 자동화 전문가, 도메인 전문가 등 필요한 역할을 정의하고, 각 역할별 책임과 투입 기간을 명시한다.
+          </p>
+
+          <!-- 6. 위험 관리 섹션은 요청에 따라 제거 -->
+
+          <h2><span class="tp-doc-section-number">6.</span> 테스트 프로세스 및 절차 (Test Process & Procedures)</h2>
+          <ol>
+            <li>요구사항 분석</li>
+            <li>테스트 설계 및 케이스 정의</li>
+            <li>테스트 데이터 준비</li>
+            <li>테스트 수행 및 결과 기록</li>
+            <li>결함 등록 및 추적</li>
+            <li>회귀 테스트 및 최종 리포트 작성</li>
+          </ol>
+
+          <h2><span class="tp-doc-section-number">7.</span> 결함 관리 (Defect Management)</h2>
+          <ul>
+            <li>결함은 심각도(Sev1~Sev4)와 우선순위(P1~P4)로 분류한다.</li>
+            <li>결함 상태는 New → Assigned → Fixed → Verified → Closed 흐름으로 관리한다.</li>
+            <li>이슈 트래킹 도구(Jira, Redmine 등)를 사용하여 결함 이력과 변경 내역을 관리한다.</li>
+          </ul>
+
+          <h2><span class="tp-doc-section-number">8.</span> 승인 및 변경 관리 (Approval & Change Management)</h2>
+          <ul>
+            <li>테스트 플랜 및 범위 변경은 변경 요청서와 영향도 분석을 통해 승인 절차를 거친다.</li>
+            <li>프로젝트 매니저, QA 리더, 개발 리더 등 주요 이해관계자의 승인을 기록한다.</li>
+          </ul>
+
+          <h2><span class="tp-doc-section-number">9.</span> 부록 (Appendix)</h2>
+          <ul>
+            <li>용어 정의(Glossary)</li>
+            <li>참조 문서 목록 (요구사항 명세서, 설계서, 아키텍처 문서 등)</li>
+          </ul>
+        </div>
+      `;
+    }
+
+    // ---------- Generate 버튼 ----------
+    function generatePlan() {
+      const project = getProjectData();
+      const requirements = getRequirements();
+      const strategy = getStrategy();
+
+      const html = generateTestPlanHTML(project, requirements, strategy);
+
+      const preview = document.getElementById("planPreview");
+      preview.innerHTML = html;
+      document.getElementById("previewWrapper").classList.remove("d-none");
+    }
+
+    // ---------- HTML → PDF 다운로드 ----------
+    function downloadPDF() {
+      const projectName = document.getElementById("projectName").value || "testplan";
+      const element = document.getElementById("planExport"); // 숨겨진 순수 문서 영역
+
+      const opt = {
+        margin: 10,
+        filename: projectName + "_testplan.pdf",
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      };
+
+      html2pdf().set(opt).from(element).save();
+    }
+
+    // ---------- 초기 세팅 ----------
+    function init() {
+      createChips();
+      addRequirementRow({
+        reqId: "FR-001",
+        type: "FR",
+        description: "사용자 로그인 기능 제공",
+        priority: "High",
+        tags: ["기능", "보안"],
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>
