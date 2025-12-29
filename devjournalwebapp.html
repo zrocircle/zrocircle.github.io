@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevLog Pro - 모던 개발일지</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            /* Indigo 600 */
+            --primary-hover: #4338ca;
+            --bg-color: #f3f4f6;
+            --text-color: #1f2937;
+            --card-bg: #ffffff;
+            --border-radius: 12px;
+            --input-bg: #f9fafb;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Noto Sans KR', sans-serif;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        /* --- 왼쪽 에디터 스타일 --- */
+        .editor-container {
+            height: 100vh;
+            overflow-y: auto;
+            background: white;
+            border-right: 1px solid #e5e7eb;
+            box-shadow: var(--shadow-md);
+            padding: 2rem;
+            z-index: 10;
+        }
+
+        .app-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f3f4f6;
+        }
+
+        .app-title {
+            font-weight: 800;
+            color: var(--primary-color);
+            letter-spacing: -0.5px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #4b5563;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control {
+            background-color: var(--input-bg);
+            border: 1px solid #e5e7eb;
+            border-radius: var(--border-radius);
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus {
+            background-color: white;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+            padding: 12px;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            border-radius: var(--border-radius);
+            padding: 12px;
+            font-weight: 500;
+        }
+
+        /* 이미지 리스트 아이템 스타일 */
+        .img-item {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s;
+        }
+
+        .img-item:hover {
+            transform: translateX(2px);
+        }
+
+        .img-item span {
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+
+        /* --- 오른쪽 미리보기(A4) 스타일 --- */
+        .preview-container {
+            background-color: var(--bg-color);
+            padding: 3rem 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .a4-page {
+            background: white;
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm;
+            /* A4 표준 여백 */
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        /* 문서 내부 스타일 */
+        .doc-title {
+            font-size: 24pt;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 10px;
+            color: #111;
+        }
+
+        .doc-subtitle {
+            font-size: 11pt;
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+        }
+
+        .doc-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            font-size: 11pt;
+        }
+
+        .doc-table th {
+            background: #f8f9fa;
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+            width: 15%;
+            font-weight: 600;
+        }
+
+        .doc-table td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+            width: 35%;
+        }
+
+        .section-title {
+            font-size: 14pt;
+            font-weight: 700;
+            border-bottom: 2px solid #000;
+            padding-bottom: 5px;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            color: #000;
+        }
+
+        .content-box {
+            font-size: 11pt;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            min-height: 50px;
+            color: #222;
+        }
+
+        /* 인쇄 설정 (화면 UI 숨김) */
+        @media print {
+            body {
+                background: white;
+            }
+
+            .editor-container {
+                display: none !important;
+            }
+
+            .preview-container {
+                padding: 0;
+                display: block;
+            }
+
+            .a4-page {
+                box-shadow: none;
+                margin: 0;
+                width: 100%;
+                page-break-after: always;
+            }
+
+            .evidence-img-wrapper {
+                page-break-inside: avoid;
+                margin-bottom: 20px;
+            }
+
+            /* 인쇄 시 링크 등 제거 */
+            a {
+                text-decoration: none;
+                color: black;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+
+            <div class="col-md-4 editor-container">
+                <div class="app-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-journal-code fs-3 text-primary"></i>
+                        <h4 class="app-title m-0">DevLog Pro</h4>
+                    </div>
+                    <p class="text-muted small mt-1 mb-0">오늘의 성장을 기록하고 PDF로 내보내세요.</p>
+                </div>
+
+                <div class="mb-4 row">
+                    <div class="col-6">
+                        <label class="form-label"><i class="bi bi-person"></i> 작성자</label>
+                        <input type="text" id="inputName" class="form-control" placeholder="이름 입력"
+                            oninput="updatePreview()">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label"><i class="bi bi-calendar-event"></i> 날짜</label>
+                        <input type="date" id="inputDate" class="form-control" oninput="updatePreview()">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label"><i class="bi bi-check-circle"></i> 1. 오늘 한 일 (Done)</label>
+                    <textarea id="inputDone" class="form-control" rows="4" placeholder="• 구체적인 작업 내용을 기록하세요."
+                        oninput="updatePreview()"></textarea>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label"><i class="bi bi-lightbulb"></i> 2. 배운 점 (Learned)</label>
+                    <textarea id="inputLearned" class="form-control" rows="4" placeholder="• 새롭게 알게 된 지식이나 깨달음을 적어보세요."
+                        oninput="updatePreview()"></textarea>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label"><i class="bi bi-exclamation-triangle"></i> 3. 이슈 해결
+                        (Troubleshooting)</label>
+                    <textarea id="inputTrouble" class="form-control" rows="4"
+                        placeholder="• 에러 메시지와 해결 과정을 기록하면 큰 자산이 됩니다." oninput="updatePreview()"></textarea>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label"><i class="bi bi-arrow-right-circle"></i> 4. 내일 할 일 (Next)</label>
+                    <textarea id="inputNext" class="form-control" rows="2" placeholder="• 내일의 목표를 미리 정해보세요."
+                        oninput="updatePreview()"></textarea>
+                </div>
+
+                <div class="mb-5 p-3 rounded-3" style="background-color: #eff6ff; border: 1px dashed #bfdbfe;">
+                    <label class="form-label text-primary fw-bold"><i class="bi bi-images"></i> 5. 증빙 자료 첨부</label>
+                    <input type="file" id="inputFile" class="form-control mb-2" accept="image/*" multiple
+                        onchange="handleAddImages(this)">
+                    <div class="form-text mb-2">이미지를 선택하면 아래 목록에 추가됩니다. (여러 장 가능)</div>
+
+                    <div id="addedImageList" class="mt-3">
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 pb-5">
+                    <button class="btn btn-primary btn-lg" onclick="window.print()">
+                        <i class="bi bi-printer me-2"></i> PDF 저장 / 인쇄
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="clearData()">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> 초기화
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-md-8 preview-container">
+                <div class="a4-page print-area">
+                    <div class="doc-title">Daily Development Log</div>
+                    <div class="doc-subtitle">소프트웨어 개발 실습 및 업무 일지</div>
+
+                    <table class="doc-table">
+                        <tr>
+                            <th>작성자</th>
+                            <td id="viewName"></td>
+                            <th>작성일</th>
+                            <td id="viewDate"></td>
+                        </tr>
+                    </table>
+
+                    <div>
+                        <div class="section-title">1. 금일 수행 업무 (Done)</div>
+                        <div id="viewDone" class="content-box"></div>
+                    </div>
+
+                    <div>
+                        <div class="section-title">2. 학습 내용 (Learned)</div>
+                        <div id="viewLearned" class="content-box"></div>
+                    </div>
+
+                    <div>
+                        <div class="section-title">3. 문제 해결 (Troubleshooting)</div>
+                        <div id="viewTrouble" class="content-box"></div>
+                    </div>
+
+                    <div>
+                        <div class="section-title">4. 차일 계획 (Next Steps)</div>
+                        <div id="viewNext" class="content-box"></div>
+                    </div>
+
+                    <div id="evidenceSection" class="d-none">
+                        <div class="section-title">5. 증빙 자료 (Screenshots)</div>
+                        <div id="imagePreviewContainer" class="mt-3">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let uploadedImages = [];
+
+        window.onload = function () {
+            document.getElementById('inputDate').valueAsDate = new Date();
+            loadData();
+            updatePreview();
+        };
+
+        function updatePreview() {
+            const fields = ['Name', 'Date', 'Done', 'Learned', 'Trouble', 'Next'];
+            fields.forEach(id => {
+                const val = document.getElementById('input' + id).value;
+                // 줄바꿈 보존을 위해 innerText 사용
+                document.getElementById('view' + id).innerText = val;
+            });
+            saveData();
+        }
+
+        // 이미지 추가
+        function handleAddImages(input) {
+            if (input.files && input.files.length > 0) {
+                Array.from(input.files).forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        const newImage = {
+                            id: Date.now() + Math.random(),
+                            name: file.name,
+                            src: e.target.result
+                        };
+                        uploadedImages.push(newImage);
+                        renderImages();
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+            input.value = '';
+        }
+
+        // 이미지 삭제
+        function deleteImage(id) {
+            uploadedImages = uploadedImages.filter(img => img.id !== id);
+            renderImages();
+        }
+
+        // 화면 렌더링
+        function renderImages() {
+            const listContainer = document.getElementById('addedImageList');
+            const previewContainer = document.getElementById('imagePreviewContainer');
+            const section = document.getElementById('evidenceSection');
+
+            listContainer.innerHTML = '';
+            previewContainer.innerHTML = '';
+
+            if (uploadedImages.length > 0) {
+                section.classList.remove('d-none');
+
+                uploadedImages.forEach(img => {
+                    // 왼쪽 리스트 (칩 스타일)
+                    const listItem = document.createElement('div');
+                    listItem.className = 'img-item';
+                    listItem.innerHTML = `
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-file-earmark-image text-primary"></i>
+                        <span class="fw-medium text-dark">${img.name}</span>
+                    </div>
+                    <button class="btn btn-sm text-danger p-0" onclick="deleteImage(${img.id})">
+                        <i class="bi bi-x-circle-fill fs-6"></i>
+                    </button>
+                `;
+                    listContainer.appendChild(listItem);
+
+                    // 오른쪽 미리보기
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'evidence-img-wrapper text-center border p-2 mb-3';
+                    const imageTag = document.createElement('img');
+                    imageTag.src = img.src;
+                    imageTag.style = "max-width: 100%; max-height: 450px; object-fit: contain;";
+                    wrapper.appendChild(imageTag);
+                    previewContainer.appendChild(wrapper);
+                });
+            } else {
+                section.classList.add('d-none');
+            }
+        }
+
+        function saveData() {
+            const data = {
+                name: document.getElementById('inputName').value,
+                done: document.getElementById('inputDone').value,
+                learned: document.getElementById('inputLearned').value,
+                trouble: document.getElementById('inputTrouble').value,
+                next: document.getElementById('inputNext').value
+            };
+            localStorage.setItem('dailyLogModernData', JSON.stringify(data));
+        }
+
+        function loadData() {
+            const savedData = localStorage.getItem('dailyLogModernData');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                document.getElementById('inputName').value = data.name || '';
+                if (data.done) document.getElementById('inputDone').value = data.done;
+                if (data.learned) document.getElementById('inputLearned').value = data.learned;
+                if (data.trouble) document.getElementById('inputTrouble').value = data.trouble;
+                if (data.next) document.getElementById('inputNext').value = data.next;
+            }
+        }
+
+        function clearData() {
+            if (confirm("모든 내용을 초기화하시겠습니까?")) {
+                localStorage.removeItem('dailyLogModernData');
+                ['inputDone', 'inputLearned', 'inputTrouble', 'inputNext'].forEach(id => document.getElementById(id).value = '');
+                uploadedImages = [];
+                renderImages();
+                updatePreview();
+            }
+        }
+    </script>
+
+</body>
+
+</html>
