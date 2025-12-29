@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>무지크 온새미로 연주 보고서</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
+    <style>
+        :root {
+            --primary-color: #7c3aed;
+            --bg-color: #f1f5f9;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Noto Sans KR', sans-serif;
+            color: #334155;
+            -webkit-print-color-adjust: exact;
+        }
+
+        /* ----------------------------------------------------
+           1. 에디터 패널 (왼쪽)
+           ---------------------------------------------------- */
+        .editor-container {
+            height: 100vh;
+            overflow-y: auto;
+            background: white;
+            border-right: 1px solid #e2e8f0;
+            padding: 2rem;
+            z-index: 10;
+        }
+
+        .section-header {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-top: 2rem;
+            margin-bottom: 0.8rem;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 5px;
+        }
+
+        .calc-box {
+            background: #fff1f2;
+            border: 1px solid #fecdd3;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        /* ----------------------------------------------------
+           2. 미리보기 패널 (오른쪽) - 스크롤 개선
+           ---------------------------------------------------- */
+        .preview-container {
+            background-color: #64748b;
+            padding: 50px 20px;
+            /* 위아래 여백 확보 */
+            height: 100vh;
+            overflow-y: auto;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            /* 🌟 핵심 수정: 내용이 길어지면 아래로 늘어나게 함 */
+        }
+
+        .paper {
+            background: white;
+            width: 210mm;
+            min-height: 297mm;
+            height: auto;
+            /* 내용에 따라 늘어남 */
+            padding: 20mm;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            box-sizing: border-box;
+            position: relative;
+            margin-bottom: 50px;
+            /* 스크롤 끝부분 여백 */
+        }
+
+        /* ----------------------------------------------------
+           3. 보고서 내부 요소 스타일
+           ---------------------------------------------------- */
+        h1.report-title {
+            font-size: 24pt;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 50px;
+            /* 결재란 삭제로 인한 여백 조정 */
+            color: #000;
+        }
+
+        table.report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 10.5pt;
+            page-break-inside: auto;
+        }
+
+        table.report-table th,
+        table.report-table td {
+            border: 1px solid #000;
+            padding: 8px 10px;
+        }
+
+        table.report-table th {
+            background-color: #f1f5f9;
+            text-align: center;
+            font-weight: 600;
+            width: 18%;
+        }
+
+        tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+        }
+
+        .report-section-title {
+            font-size: 13pt;
+            font-weight: 700;
+            border-left: 6px solid #000;
+            padding-left: 12px;
+            margin: 30px 0 15px 0;
+            background: #f8fafc;
+            padding-top: 5px;
+            padding-bottom: 5px;
+            page-break-after: avoid;
+        }
+
+        .content-text {
+            white-space: pre-wrap;
+            font-size: 11pt;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .evidence-img-wrapper {
+            text-align: center;
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+
+        .evidence-img {
+            max-width: 100%;
+            max-height: 500px;
+            border: 1px solid #ddd;
+        }
+
+        /* ----------------------------------------------------
+           4. 인쇄 모드 (Print CSS)
+           ---------------------------------------------------- */
+        @media print {
+
+            .editor-container,
+            .btn,
+            ::-webkit-scrollbar {
+                display: none !important;
+            }
+
+            .preview-container {
+                padding: 0;
+                height: auto;
+                background: white;
+                display: block;
+                overflow: visible;
+            }
+
+            .paper {
+                box-shadow: none;
+                margin: 0;
+                width: 100%;
+                max-width: 100%;
+                padding: 0;
+                height: auto;
+                margin-bottom: 0;
+            }
+
+            @page {
+                size: A4;
+                margin: 15mm 15mm;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+
+            <div class="col-md-4 editor-container">
+                <h4 class="fw-bold mb-4 text-primary"><i class="bi bi-file-earmark-music"></i> 무지크 온새미로 연주보고서</h4>
+
+                <div class="section-header">1. 기본 정보</div>
+                <div class="mb-2"><label class="form-label">연주 제목</label><input type="text" id="inTitle"
+                        class="form-control" placeholder="제 10회 정기연주회" oninput="updateView()"></div>
+
+                <div class="row mb-2">
+                    <div class="col-6"><label class="form-label">일자</label><input type="date" id="inDate"
+                            class="form-control" oninput="updateView()"></div>
+
+                    <div class="col-6">
+                        <label class="form-label">시간 (시작 ~ 종료)</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="time" id="inStartTime" class="form-control" oninput="updateView()">
+                            <span>~</span>
+                            <input type="time" id="inEndTime" class="form-control" oninput="updateView()">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-2"><label class="form-label">장소</label><input type="text" id="inPlace"
+                        class="form-control" oninput="updateView()"></div>
+                <div class="row mb-2">
+                    <div class="col-6"><label class="form-label">주최/주관</label><input type="text" id="inHost"
+                            class="form-control" oninput="updateView()"></div>
+                    <div class="col-6">
+                        <label class="form-label">유형</label>
+                        <select id="inType" class="form-select" onchange="updateView()">
+                            <option value="대음악회 (1시간 이상)">대음악회 (1시간 이상)</option>
+                            <option value="미니음악회(30~40분정도)">미니음악회(30~40분정도)</option>
+                            <option value="초청공연(1,2곡)">초청공연(1,2곡)</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-2"><label class="form-label">대상 청중</label><input type="text" id="inAudience"
+                        class="form-control" oninput="updateView()"></div>
+
+                <div class="section-header">2. 참여자 정보</div>
+                <div class="row mb-2">
+                    <div class="col-6"><label class="form-label">연주자(본인)</label><input type="text" id="inPerformer"
+                            class="form-control" oninput="updateView()"></div>
+                    <div class="col-6"><label class="form-label">악기/파트</label><input type="text" id="inInstrument"
+                            class="form-control" oninput="updateView()"></div>
+                </div>
+                <div class="mb-2"><label class="form-label">공동 연주자</label><textarea id="inPartners" class="form-control"
+                        rows="2" placeholder="예: 홍길동(피아노), 김철수(바이올린)" oninput="updateView()"></textarea></div>
+                <div class="mb-2"><label class="form-label">특별출연/지휘</label><input type="text" id="inSpecial"
+                        class="form-control" oninput="updateView()"></div>
+
+                <div class="section-header">3. 프로그램</div>
+                <div class="mb-2"><textarea id="inProgram" class="form-control" rows="4" placeholder="곡명 입력"
+                        oninput="updateView()"></textarea></div>
+                <div class="mb-2">
+                    <label class="form-label text-danger small">※ [증빙] 프로그램북 표지</label>
+                    <input type="file" class="form-control" accept="image/*"
+                        onchange="loadImage(this, 'viewProgramImg')">
+                </div>
+
+                <div class="section-header">4. 교통비 (왕복/하이패스)</div>
+                <select id="transportMode" class="form-select mb-3" onchange="toggleTransportMode()">
+                    <option value="car">자차 (공식 계산)</option>
+                    <option value="train">기차/항공 (실비)</option>
+                    <option value="carpool">카풀 (지급 제외)</option>
+                </select>
+
+                <div id="modeCar" class="calc-box">
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="isRoundTrip" onchange="calcTransport()"
+                            checked>
+                        <label class="form-check-label fw-bold text-danger" for="isRoundTrip">왕복 적용 (x2)</label>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6"><label class="small">편도 거리(km)</label><input type="number" id="tDist"
+                                class="form-control" placeholder="0" oninput="calcTransport()"></div>
+                        <div class="col-6"><label class="small">유가(원/L)</label><input type="number" id="tPrice"
+                                class="form-control" placeholder="1650" oninput="calcTransport()"></div>
+                    </div>
+                    <div class="mb-2"><label class="small">편도 통행료(하이패스)</label><input type="number" id="tToll"
+                            class="form-control" placeholder="0" oninput="calcTransport()"></div>
+                    <div class="mb-2"><label class="small">지역</label><input type="text" id="tRegion"
+                            class="form-control form-control-sm" placeholder="서울 서초구" oninput="updateView()"></div>
+                </div>
+
+                <div id="modePublic" class="calc-box d-none">
+                    <label>실 결제 금액 (원)</label><input type="number" id="tActualCost" class="form-control"
+                        oninput="calcTransport()">
+                </div>
+
+                <div class="d-flex justify-content-between mb-2">
+                    <strong class="small">청구액:</strong>
+                    <strong id="finalCostDisplay" class="text-primary">0 원</strong>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label text-danger small">※ [증빙] 영수증/경로</label>
+                    <input type="file" class="form-control" accept="image/*"
+                        onchange="loadImage(this, 'viewTransportImg')">
+                </div>
+
+                <div class="section-header">5. 총평 & 첨부</div>
+                <textarea id="inComment" class="form-control mb-3" rows="3" placeholder="연주 총평"
+                    oninput="updateView()"></textarea>
+
+                <label class="form-label small">추가 현장 사진 (다중 선택)</label>
+                <input type="file" class="form-control" accept="image/*" multiple onchange="handleAppendixImages(this)">
+
+                <hr class="my-4">
+                <button class="btn btn-primary w-100 py-3 fw-bold fs-5 shadow-sm" onclick="window.print()">
+                    <i class="bi bi-printer-fill me-2"></i> PDF 인쇄 / 저장
+                </button>
+            </div>
+
+            <div class="col-md-8 preview-container">
+                <div class="paper print-area">
+
+                    <h1 class="report-title">무 지 크 온 새 미 로 <br> 연 주 보 고 서</h1>
+
+                    <div class="report-section-title">1. 공연 개요</div>
+                    <table class="report-table">
+                        <tr>
+                            <th>공연명</th>
+                            <td colspan="3" id="outTitle"></td>
+                        </tr>
+                        <tr>
+                            <th>일 시</th>
+                            <td id="outDate"></td>
+                            <th>시 간</th>
+                            <td id="outTime"></td>
+                        </tr>
+                        <tr>
+                            <th>장 소</th>
+                            <td id="outPlace"></td>
+                            <th>유 형</th>
+                            <td id="outType"></td>
+                        </tr>
+                        <tr>
+                            <th>주최/주관</th>
+                            <td id="outHost"></td>
+                            <th>대 상</th>
+                            <td id="outAudience"></td>
+                        </tr>
+                    </table>
+
+                    <div class="report-section-title">2. 참여자</div>
+                    <table class="report-table">
+                        <tr>
+                            <th>연주자</th>
+                            <td id="outPerformer"></td>
+                            <th>악기/파트</th>
+                            <td id="outInstrument"></td>
+                        </tr>
+                        <tr>
+                            <th>공동연주</th>
+                            <td colspan="3" id="outPartners"></td>
+                        </tr>
+                        <tr>
+                            <th>특별참여</th>
+                            <td colspan="3" id="outSpecial"></td>
+                        </tr>
+                    </table>
+
+                    <div class="report-section-title">3. 프로그램 구성</div>
+                    <div id="outProgram" class="content-text border p-2 mb-2"></div>
+                    <div id="viewProgramImgArea" class="evidence-img-wrapper d-none">
+                        <img id="viewProgramImg" class="evidence-img" src="">
+                        <p class="small text-muted mt-1">- 프로그램 북 -</p>
+                    </div>
+
+                    <div class="report-section-title">4. 교통비 산출 내역</div>
+                    <table class="report-table">
+                        <tr>
+                            <th>이동수단</th>
+                            <td id="outTransportMode">자차</td>
+                            <th>청구금액</th>
+                            <td id="outTransportCost" class="fw-bold text-end pe-3">0 원</td>
+                        </tr>
+                        <tr>
+                            <th>산출근거</th>
+                            <td colspan="3" id="outTransportDetail" class="small"></td>
+                        </tr>
+                    </table>
+                    <div id="viewTransportImgArea" class="evidence-img-wrapper d-none">
+                        <img id="viewTransportImg" class="evidence-img" src="">
+                        <p class="small text-muted mt-1">- 영수증/경로 증빙 -</p>
+                    </div>
+
+                    <div class="report-section-title">5. 연주 총평</div>
+                    <div id="outComment" class="content-text border p-3"></div>
+
+                    <div id="appendixSection" class="d-none">
+                        <div class="report-section-title">6. 첨부 자료 (Appendix)</div>
+                        <div id="appendixImages"></div>
+                    </div>
+
+                    <div class="text-center mt-5 pt-4">
+                        <p>위와 같이 연주 결과를 보고합니다.</p>
+                        <p class="mt-4" id="signDate"></p>
+                        <p class="fw-bold mt-4" style="font-size: 14pt;">작성자: <span id="signerName"></span> (인)</p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function () {
+            const today = new Date();
+            document.getElementById('inDate').valueAsDate = today;
+            document.getElementById('signDate').innerText = today.toLocaleDateString() + " " + "작성";
+            updateView();
+        };
+
+        function updateView() {
+            const mapping = {
+                'inTitle': 'outTitle', 'inPlace': 'outPlace', 'inHost': 'outHost', 'inType': 'outType',
+                'inAudience': 'outAudience', 'inPerformer': 'outPerformer', 'inInstrument': 'outInstrument',
+                'inPartners': 'outPartners', 'inSpecial': 'outSpecial', 'inProgram': 'outProgram',
+                'inComment': 'outComment'
+            };
+
+            for (let inputId in mapping) {
+                document.getElementById(mapping[inputId]).innerText = document.getElementById(inputId).value;
+            }
+
+            const date = document.getElementById('inDate').value;
+            document.getElementById('outDate').innerText = date;
+            document.getElementById('signDate').innerText = date + " 작성";
+            document.getElementById('signerName').innerText = document.getElementById('inPerformer').value;
+
+            // 시간 처리
+            const startTime = document.getElementById('inStartTime').value;
+            const endTime = document.getElementById('inEndTime').value;
+            let timeStr = "";
+            if (startTime && endTime) {
+                timeStr = startTime + " ~ " + endTime;
+            } else if (startTime) {
+                timeStr = startTime + " ~ ";
+            }
+            document.getElementById('outTime').innerText = timeStr;
+
+            calcTransport();
+        }
+
+        function toggleTransportMode() {
+            const mode = document.getElementById('transportMode').value;
+            const carBox = document.getElementById('modeCar');
+            const pubBox = document.getElementById('modePublic');
+
+            if (mode === 'car') {
+                carBox.classList.remove('d-none');
+                pubBox.classList.add('d-none');
+                document.getElementById('outTransportMode').innerText = "자차 (법인/개인)";
+            } else if (mode === 'train') {
+                carBox.classList.add('d-none');
+                pubBox.classList.remove('d-none');
+                document.getElementById('outTransportMode').innerText = "대중교통 (기차/항공)";
+            } else {
+                carBox.classList.add('d-none');
+                pubBox.classList.add('d-none');
+                document.getElementById('outTransportMode').innerText = "카풀/기타";
+            }
+            calcTransport();
+        }
+
+        function calcTransport() {
+            const mode = document.getElementById('transportMode').value;
+            let cost = 0;
+            let detailText = "";
+
+            if (mode === 'car') {
+                const dist = parseFloat(document.getElementById('tDist').value) || 0;
+                const price = parseFloat(document.getElementById('tPrice').value) || 0;
+                const toll = parseFloat(document.getElementById('tToll').value) || 0;
+                const isRoundTrip = document.getElementById('isRoundTrip').checked;
+                const region = document.getElementById('tRegion').value || "지역미정";
+
+                let oneWayTotal = ((dist / 11) * price) + toll;
+
+                if (isRoundTrip) {
+                    cost = Math.round(oneWayTotal * 2);
+                    detailText = `[왕복] {(편도 ${dist}km ÷ 11 × ${price}원) + 톨비 ${toll.toLocaleString()}원} × 2회`;
+                } else {
+                    cost = Math.round(oneWayTotal);
+                    detailText = `[편도] (거리 ${dist}km ÷ 11 × ${price}원) + 톨비 ${toll.toLocaleString()}원`;
+                }
+                detailText += ` / ${region} 기준`;
+
+            } else if (mode === 'train') {
+                cost = parseFloat(document.getElementById('tActualCost').value) || 0;
+                detailText = "실비 정산 (영수증 금액 기준)";
+            } else {
+                cost = 0;
+                detailText = "교통비 지급 대상 아님";
+            }
+
+            const formattedCost = cost.toLocaleString() + " 원";
+            document.getElementById('finalCostDisplay').innerText = formattedCost;
+            document.getElementById('outTransportCost').innerText = formattedCost;
+            document.getElementById('outTransportDetail').innerText = detailText;
+        }
+
+        function loadImage(input, targetId) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const img = document.getElementById(targetId);
+                    img.src = e.target.result;
+                    img.parentElement.classList.remove('d-none');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function handleAppendixImages(input) {
+            const container = document.getElementById('appendixImages');
+            const section = document.getElementById('appendixSection');
+
+            container.innerHTML = '';
+
+            if (input.files && input.files.length > 0) {
+                section.classList.remove('d-none');
+                Array.from(input.files).forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'evidence-img-wrapper';
+
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'evidence-img';
+
+                        wrapper.appendChild(img);
+                        container.appendChild(wrapper);
+                    };
+                    reader.readAsDataURL(file);
+                });
+            } else {
+                section.classList.add('d-none');
+            }
+        }
+    </script>
+
+</body>
+
+</html>
